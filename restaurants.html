@@ -1,0 +1,568 @@
+<!--
+  LifeTracker — Restaurant Tracker (restaurants.html)
+  localStorage keys:
+    lifetracker_v1_restaurants  → { restaurants: [...], lists: [...] }
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurants — LifeTracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bg: #F9F7F4;
+    --card: #FFFFFF;
+    --text: #1A1A1A;
+    --text-muted: #888880;
+    --accent: #C4714A;
+    --accent-light: #F5E8E0;
+    --border: #EDEBE7;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --radius: 16px;
+    --font-head: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+  .container { max-width: 430px; margin: 0 auto; padding: 0 20px 100px; }
+
+  .nav { display: flex; align-items: center; justify-content: space-between; padding-top: 52px; padding-bottom: 20px; }
+  .back-btn { display: flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .back-btn:active { color: var(--accent); }
+  .page-title { font-family: var(--font-head); font-size: 24px; }
+  .nav-right { display: flex; gap: 8px; }
+  .icon-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+  .icon-btn:active { background: var(--accent-light); transform: scale(0.93); }
+
+  /* Search */
+  .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .search-input { flex: 1; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-family: var(--font-body); font-size: 14px; background: var(--card); color: var(--text); outline: none; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--accent); }
+  .filter-btn { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-muted); white-space: nowrap; transition: all 0.15s; }
+  .filter-btn:active { background: var(--accent-light); }
+  .filter-btn.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+  /* List chips */
+  .list-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; scrollbar-width: none; }
+  .list-chips::-webkit-scrollbar { display: none; }
+  .chip { padding: 7px 16px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; white-space: nowrap; cursor: pointer; background: var(--card); transition: all 0.15s; user-select: none; }
+  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Sort */
+  .sort-row { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+  .sort-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .sort-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: var(--font-body); font-size: 13px; background: var(--card); color: var(--text); cursor: pointer; outline: none; }
+
+  /* Restaurant cards */
+  .restaurant-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: transform 0.15s; }
+  .restaurant-card:active { transform: scale(0.97); }
+  .r-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .r-name { font-family: var(--font-head); font-size: 18px; line-height: 1.2; flex: 1; }
+  .r-rating { background: var(--accent); color: #fff; border-radius: 8px; padding: 3px 8px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .r-meta { font-size: 12px; color: var(--text-muted); margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .r-meta span { display: flex; align-items: center; gap: 3px; }
+  .r-status { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-top: 8px; }
+  .status-Visited { background: #E8F5E9; color: #2E7D32; }
+  .status-Want { background: var(--accent-light); color: var(--accent); }
+  .status-Favorite { background: #FFF3E0; color: #E65100; }
+  .r-notes { font-size: 13px; color: var(--text-muted); margin-top: 8px; line-height: 1.4; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: var(--radius); padding: 14px; border: 1px solid var(--border); }
+  .stat-val { font-family: var(--font-head); font-size: 22px; color: var(--accent); }
+  .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
+  .stat-card.wide { grid-column: 1/-1; }
+
+  .empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; line-height: 1.5; }
+
+  /* FAB */
+  .fab { position: fixed; bottom: 28px; right: 50%; transform: translateX(calc(50% + 175px)); width: 56px; height: 56px; border-radius: 18px; background: var(--accent); color: #fff; border: none; font-size: 26px; cursor: pointer; box-shadow: 0 4px 20px rgba(196,113,74,0.45); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; z-index: 10; }
+  .fab:active { transform: translateX(calc(50% + 175px)) scale(0.93); }
+  @media (max-width: 430px) { .fab { right: 20px; transform: none; } .fab:active { transform: scale(0.93); } }
+
+  /* Modal */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; backdrop-filter: blur(2px); align-items: flex-end; justify-content: center; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--card); width: 100%; max-width: 430px; border-radius: 24px 24px 0 0; padding: 24px 24px 40px; max-height: 92vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+  .overlay.open .modal { transform: translateY(0); }
+  .panel-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-family: var(--font-head); font-size: 22px; margin-bottom: 20px; }
+  .field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; }
+  .field-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; }
+  .field-input:focus { border-color: var(--accent); }
+  select.field-input { cursor: pointer; }
+  textarea.field-input { resize: vertical; min-height: 80px; }
+  .rating-row { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .rating-btn { padding: 7px 11px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; cursor: pointer; background: var(--bg); transition: all 0.15s; }
+  .rating-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-primary { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-secondary { flex: 0; background: none; color: #C0392B; border: 1px solid #C0392B; border-radius: 12px; padding: 14px 16px; font-family: var(--font-body); font-size: 15px; cursor: pointer; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+
+  /* Filter panel */
+  .filter-panel { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; display: none; }
+  .filter-panel.open { display: block; }
+  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a class="back-btn" href="index.html"><i data-lucide="arrow-left" width="18" height="18"></i> Back</a>
+    <div class="page-title">Restaurants</div>
+    <div class="nav-right">
+      <button class="icon-btn" onclick="setView('stats')" title="Stats"><i data-lucide="bar-chart-2" width="16" height="16"></i></button>
+      <button class="icon-btn" onclick="openImport()" title="Import"><i data-lucide="upload" width="16" height="16"></i></button>
+      <button class="icon-btn" onclick="exportJSON()" title="Export"><i data-lucide="download" width="16" height="16"></i></button>
+    </div>
+  </div>
+
+  <div id="viewList">
+    <div class="search-row">
+      <input class="search-input" id="searchInput" type="text" placeholder="Search restaurants..." oninput="renderList()">
+      <button class="filter-btn" id="filterToggle" onclick="toggleFilters()"><i data-lucide="sliders-horizontal" width="14" height="14"></i> Filter</button>
+    </div>
+
+    <div class="filter-panel" id="filterPanel">
+      <div class="filter-grid">
+        <div>
+          <label class="field-label">Cuisine</label>
+          <input class="field-input" id="filterCuisine" type="text" placeholder="e.g. Italian" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
+        </div>
+        <div>
+          <label class="field-label">City</label>
+          <input class="field-input" id="filterCity" type="text" placeholder="e.g. NYC" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
+        </div>
+        <div>
+          <label class="field-label">Min rating</label>
+          <input class="field-input" id="filterMinRating" type="number" min="0" max="10" placeholder="0" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
+        </div>
+        <div>
+          <label class="field-label">Sort by</label>
+          <select class="field-input" id="sortSelect" onchange="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
+            <option value="date">Date added</option>
+            <option value="rating">Rating</option>
+            <option value="alpha">A–Z</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="list-chips" id="listChips"></div>
+    <div id="restaurantList"></div>
+  </div>
+
+  <div id="viewStats" style="display:none"></div>
+</div>
+
+<button class="fab" onclick="openAddModal()" id="fabBtn">+</button>
+
+<!-- Add/Edit modal -->
+<div class="overlay" id="restaurantOverlay" onclick="closeOverlayIfOutside(event,'restaurantOverlay')">
+  <div class="modal">
+    <div class="panel-handle"></div>
+    <div class="modal-title" id="modalTitle">New Restaurant</div>
+    <input type="hidden" id="editId">
+    <label class="field-label">Name *</label>
+    <input class="field-input" id="rName" type="text" placeholder="Restaurant name" maxlength="100">
+    <label class="field-label">Cuisine</label>
+    <input class="field-input" id="rCuisine" type="text" placeholder="e.g. Japanese, Italian">
+    <label class="field-label">Neighborhood / City</label>
+    <input class="field-input" id="rNeighborhood" type="text" placeholder="e.g. West Village, NYC">
+    <label class="field-label">Status</label>
+    <select class="field-input" id="rStatus">
+      <option>Visited</option>
+      <option>Want to Go</option>
+      <option>Favorite</option>
+    </select>
+    <label class="field-label">Rating (1–10, optional)</label>
+    <div class="rating-row" id="ratingBtns">
+      <div class="rating-btn" onclick="setRating(0)">—</div>
+      ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<div class="rating-btn" onclick="setRating(${n})">${n}</div>`).join('')}
+    </div>
+    <label class="field-label">List</label>
+    <select class="field-input" id="rList"></select>
+    <label class="field-label">Notes</label>
+    <textarea class="field-input" id="rNotes" placeholder="What did you think?"></textarea>
+    <div class="btn-row">
+      <button class="btn-secondary" id="deleteBtn" onclick="deleteRestaurant()" style="display:none"><i data-lucide="trash-2" width="14" height="14"></i></button>
+      <button class="btn-primary" onclick="saveRestaurant()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="overlay" id="importOverlay" onclick="closeOverlayIfOutside(event,'importOverlay')">
+  <div class="modal">
+    <div class="panel-handle"></div>
+    <div class="modal-title">Import</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.5">Import from Google Takeout JSON, a CSV file, or a JSON backup from this app.</p>
+    <label class="field-label">Select file</label>
+    <input class="field-input" type="file" id="importFile" accept=".json,.csv" onchange="handleImportFile(event)">
+    <div id="importPreview" style="display:none">
+      <div style="background:var(--accent-light);border-radius:12px;padding:14px;margin-bottom:16px">
+        <div id="importPreviewText" style="font-size:14px;line-height:1.5"></div>
+      </div>
+      <button class="btn-primary" onclick="confirmImport()">Import all</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom list modal -->
+<div class="overlay" id="listOverlay" onclick="closeOverlayIfOutside(event,'listOverlay')">
+  <div class="modal">
+    <div class="panel-handle"></div>
+    <div class="modal-title">Manage Lists</div>
+    <div class="add-type-row" style="display:flex;gap:8px;margin-bottom:16px">
+      <input class="field-input" id="newListInput" type="text" placeholder="New list name" maxlength="30" style="flex:1;margin-bottom:0">
+      <button class="btn-sm" style="padding:10px 14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer" onclick="addCustomList()">Add</button>
+    </div>
+    <div id="customListsList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  if(window.lucide) lucide.createIcons();
+
+  const DEFAULT_LISTS = ['All', 'Visited', 'Want to Go', 'Favorites'];
+  let selectedList = 'All';
+  let selectedRating = 0;
+  let importPending = [];
+  let currentView = 'list';
+
+  function getData() {
+    try { return JSON.parse(localStorage.getItem('lifetracker_v1_restaurants') || '{"restaurants":[],"lists":[]}'); }
+    catch(e) { return { restaurants: [], lists: [] }; }
+  }
+  function saveData(d) {
+    try { localStorage.setItem('lifetracker_v1_restaurants', JSON.stringify(d)); }
+    catch(e) { showToast('Storage full!'); }
+  }
+  function allLists(data) { return [...DEFAULT_LISTS.slice(1), ...(data.lists||[])]; }
+
+  function setView(v) {
+    currentView = v;
+    document.getElementById('viewList').style.display = v==='list'?'':'none';
+    document.getElementById('viewStats').style.display = v==='stats'?'':'none';
+    document.getElementById('fabBtn').style.display = v==='list'?'flex':'none';
+    if (v==='stats') renderStats();
+  }
+
+  function renderListChips() {
+    const data = getData();
+    const lists = ['All', ...allLists(data)];
+    document.getElementById('listChips').innerHTML = lists.map(l =>
+      `<div class="chip${l===selectedList?' active':''}" onclick="selectList('${l}')">${l}</div>`
+    ).join('') + `<div class="chip" onclick="openManageLists()" style="color:var(--text-muted)">+ List</div>`;
+  }
+
+  function selectList(l) {
+    selectedList = l;
+    renderListChips();
+    renderList();
+  }
+
+  function toggleFilters() {
+    const panel = document.getElementById('filterPanel');
+    const btn = document.getElementById('filterToggle');
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+  }
+
+  function renderList() {
+    const data = getData();
+    let items = data.restaurants || [];
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const cuisine = (document.getElementById('filterCuisine').value||'').toLowerCase();
+    const city = (document.getElementById('filterCity').value||'').toLowerCase();
+    const minRating = parseFloat(document.getElementById('filterMinRating').value)||0;
+    const sort = document.getElementById('sortSelect').value;
+
+    if (q) items = items.filter(r => r.name.toLowerCase().includes(q) || (r.cuisine||'').toLowerCase().includes(q) || (r.neighborhood||'').toLowerCase().includes(q));
+    if (cuisine) items = items.filter(r => (r.cuisine||'').toLowerCase().includes(cuisine));
+    if (city) items = items.filter(r => (r.neighborhood||'').toLowerCase().includes(city));
+    if (minRating) items = items.filter(r => (r.rating||0) >= minRating);
+
+    if (selectedList === 'Favorites') items = items.filter(r => r.status === 'Favorite');
+    else if (selectedList === 'Want to Go') items = items.filter(r => r.status === 'Want to Go');
+    else if (selectedList === 'Visited') items = items.filter(r => r.status === 'Visited');
+    else if (selectedList !== 'All') items = items.filter(r => (r.lists||[]).includes(selectedList));
+
+    if (sort==='rating') items = [...items].sort((a,b) => (b.rating||0)-(a.rating||0));
+    else if (sort==='alpha') items = [...items].sort((a,b) => a.name.localeCompare(b.name));
+    else items = [...items].sort((a,b) => b.dateAdded?.localeCompare(a.dateAdded||'')||0);
+
+    const el = document.getElementById('restaurantList');
+    if (!items.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🍽️</div><div class="empty-text">${data.restaurants.length?'No matches found.':'No restaurants yet.<br>Tap + to add your first one.'}</div></div>`;
+      return;
+    }
+    el.innerHTML = items.map(r => `
+      <div class="restaurant-card" onclick="openEditModal('${r.id}')">
+        <div class="r-header">
+          <div class="r-name">${r.name}</div>
+          ${r.rating ? `<div class="r-rating">${r.rating}</div>` : ''}
+        </div>
+        <div class="r-meta">
+          ${r.cuisine ? `<span>🍴 ${r.cuisine}</span>` : ''}
+          ${r.neighborhood ? `<span>📍 ${r.neighborhood}</span>` : ''}
+          ${r.dateAdded ? `<span>📅 ${new Date(r.dateAdded).toLocaleDateString('en-US',{month:'short',year:'numeric'})}</span>` : ''}
+        </div>
+        <div class="r-status status-${r.status?.replace(' to Go','')||'Visited'}">${r.status||'Visited'}</div>
+        ${r.notes ? `<div class="r-notes">${r.notes.slice(0,100)}${r.notes.length>100?'…':''}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function renderStats() {
+    const data = getData();
+    const items = data.restaurants || [];
+    const visited = items.filter(r => r.status === 'Visited' || r.status === 'Favorite');
+    const avg = visited.length ? (visited.filter(r=>r.rating).reduce((s,r)=>s+(r.rating||0),0)/(visited.filter(r=>r.rating).length||1)).toFixed(1) : '—';
+
+    const cuisineCounts = {};
+    items.forEach(r => { if (r.cuisine) cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine]||0)+1; });
+    const topCuisines = Object.entries(cuisineCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    const cityCounts = {};
+    items.forEach(r => { if (r.neighborhood) { const c = r.neighborhood.split(',').pop().trim(); cityCounts[c] = (cityCounts[c]||0)+1; } });
+
+    document.getElementById('viewStats').innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val">${items.length}</div><div class="stat-lbl">Total tracked</div></div>
+        <div class="stat-card"><div class="stat-val">${avg}</div><div class="stat-lbl">Avg rating</div></div>
+        <div class="stat-card"><div class="stat-val">${visited.length}</div><div class="stat-lbl">Visited</div></div>
+        <div class="stat-card"><div class="stat-val">${items.filter(r=>r.status==='Want to Go').length}</div><div class="stat-lbl">Want to go</div></div>
+        <div class="stat-card wide">
+          <div class="stat-lbl" style="margin-bottom:10px">Top cuisines</div>
+          ${topCuisines.length ? topCuisines.map(([c,n])=>`
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px">
+              <span>${c}</span><span style="font-weight:600;color:var(--accent)">${n}</span>
+            </div>`).join('') : '<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}
+        </div>
+        <div class="stat-card wide">
+          <div class="stat-lbl" style="margin-bottom:10px">Cities</div>
+          ${Object.entries(cityCounts).length ? Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([c,n])=>`
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px">
+              <span>${c}</span><span style="font-weight:600;color:var(--accent)">${n}</span>
+            </div>`).join('') : '<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}
+        </div>
+      </div>
+      <button onclick="setView('list')" style="width:100%;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:15px;cursor:pointer;color:var(--text)">← Back to list</button>
+    `;
+  }
+
+  function openAddModal() {
+    const data = getData();
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').textContent = 'New Restaurant';
+    document.getElementById('rName').value = '';
+    document.getElementById('rCuisine').value = '';
+    document.getElementById('rNeighborhood').value = '';
+    document.getElementById('rStatus').value = 'Visited';
+    document.getElementById('rNotes').value = '';
+    document.getElementById('deleteBtn').style.display = 'none';
+    selectedRating = 0;
+    updateRatingBtns();
+    populateListSelect(data, '');
+    document.getElementById('restaurantOverlay').classList.add('open');
+  }
+
+  function openEditModal(id) {
+    const data = getData();
+    const r = data.restaurants.find(x=>x.id===id);
+    if (!r) return;
+    document.getElementById('editId').value = id;
+    document.getElementById('modalTitle').textContent = 'Edit Restaurant';
+    document.getElementById('rName').value = r.name;
+    document.getElementById('rCuisine').value = r.cuisine||'';
+    document.getElementById('rNeighborhood').value = r.neighborhood||'';
+    document.getElementById('rStatus').value = r.status||'Visited';
+    document.getElementById('rNotes').value = r.notes||'';
+    document.getElementById('deleteBtn').style.display = 'block';
+    selectedRating = r.rating||0;
+    updateRatingBtns();
+    populateListSelect(data, r.lists?.[0]||'');
+    document.getElementById('restaurantOverlay').classList.add('open');
+  }
+
+  function populateListSelect(data, current) {
+    const lists = allLists(data).filter(l=>!['Visited','Want to Go','Favorites'].includes(l));
+    const el = document.getElementById('rList');
+    el.innerHTML = `<option value="">None</option>` + lists.map(l=>`<option value="${l}"${l===current?' selected':''}>${l}</option>`).join('');
+  }
+
+  function setRating(n) { selectedRating = n; updateRatingBtns(); }
+  function updateRatingBtns() {
+    document.querySelectorAll('.rating-btn').forEach(b => {
+      const v = b.textContent === '—' ? 0 : parseInt(b.textContent);
+      b.classList.toggle('active', v === selectedRating);
+    });
+  }
+
+  function saveRestaurant() {
+    const name = document.getElementById('rName').value.trim();
+    if (!name) { showToast('Please enter a name'); return; }
+    const data = getData();
+    const editId = document.getElementById('editId').value;
+    const id = editId || Date.now().toString(36);
+    const listVal = document.getElementById('rList').value;
+    const r = {
+      id, name,
+      cuisine: document.getElementById('rCuisine').value.trim(),
+      neighborhood: document.getElementById('rNeighborhood').value.trim(),
+      status: document.getElementById('rStatus').value,
+      rating: selectedRating || null,
+      notes: document.getElementById('rNotes').value.trim(),
+      lists: listVal ? [listVal] : [],
+      dateAdded: editId ? (data.restaurants.find(x=>x.id===editId)?.dateAdded||new Date().toISOString()) : new Date().toISOString()
+    };
+    if (editId) {
+      const idx = data.restaurants.findIndex(x=>x.id===editId);
+      if (idx>=0) data.restaurants[idx]=r;
+    } else {
+      data.restaurants.push(r);
+    }
+    saveData(data);
+    document.getElementById('restaurantOverlay').classList.remove('open');
+    showToast(editId?'Updated!':'Restaurant added!');
+    renderList();
+    renderListChips();
+  }
+
+  function deleteRestaurant() {
+    const id = document.getElementById('editId').value;
+    if (!id||!confirm('Delete this restaurant?')) return;
+    const data = getData();
+    data.restaurants = data.restaurants.filter(r=>r.id!==id);
+    saveData(data);
+    document.getElementById('restaurantOverlay').classList.remove('open');
+    showToast('Deleted');
+    renderList();
+    renderListChips();
+  }
+
+  function openManageLists() {
+    renderCustomListsList();
+    document.getElementById('listOverlay').classList.add('open');
+  }
+
+  function renderCustomListsList() {
+    const data = getData();
+    const el = document.getElementById('customListsList');
+    const lists = data.lists||[];
+    if (!lists.length) { el.innerHTML=`<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:16px">No custom lists</div>`; return; }
+    el.innerHTML = lists.map(l=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:15px">${l}</span>
+        <button onclick="removeList('${l}')" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text-muted)">Remove</button>
+      </div>`).join('');
+  }
+
+  function addCustomList() {
+    const val = document.getElementById('newListInput').value.trim();
+    if (!val) return;
+    const data = getData();
+    if (!data.lists) data.lists=[];
+    if (data.lists.includes(val)||DEFAULT_LISTS.includes(val)) { showToast('List exists'); return; }
+    data.lists.push(val);
+    saveData(data);
+    document.getElementById('newListInput').value='';
+    renderCustomListsList();
+    renderListChips();
+    showToast('List created');
+  }
+
+  function removeList(l) {
+    const data = getData();
+    data.lists=(data.lists||[]).filter(x=>x!==l);
+    saveData(data);
+    renderCustomListsList();
+    renderListChips();
+    if (selectedList===l) selectList('All');
+  }
+
+  // Import
+  function openImport() { document.getElementById('importFile').value=''; document.getElementById('importPreview').style.display='none'; document.getElementById('importOverlay').classList.add('open'); }
+
+  function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      try {
+        if (file.name.endsWith('.csv')) {
+          importPending = parseCSV(text);
+        } else {
+          const json = JSON.parse(text);
+          if (json.restaurants) { importPending = json.restaurants; }
+          else if (Array.isArray(json)) { importPending = json.map(item => ({ name: item.Title||item.name||'Unknown', neighborhood: item.Address||item.neighborhood||'', status: 'Want to Go', dateAdded: new Date().toISOString(), id: Date.now().toString(36)+Math.random().toString(36).slice(2) })); }
+          else throw new Error('Unknown format');
+        }
+        document.getElementById('importPreviewText').innerHTML = `Found <strong>${importPending.length}</strong> restaurant${importPending.length!==1?'s':''}.<br><small style="opacity:.7">${importPending.slice(0,3).map(r=>r.name).join(', ')}${importPending.length>3?'...':''}</small>`;
+        document.getElementById('importPreview').style.display='';
+      } catch(err) { showToast('Could not parse file'); }
+    };
+    reader.readAsText(file);
+  }
+
+  function parseCSV(text) {
+    const lines = text.split('\n').filter(l=>l.trim());
+    const headers = lines[0].split(',').map(h=>h.trim().toLowerCase());
+    return lines.slice(1).map(line => {
+      const vals = line.split(',');
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = (vals[i]||'').trim().replace(/^"|"$/g,''));
+      return { id: Date.now().toString(36)+Math.random().toString(36).slice(2), name: obj.name||obj.restaurant||'Unknown', cuisine: obj.cuisine||'', neighborhood: obj.neighborhood||obj.city||'', status: obj.status||'Visited', rating: parseFloat(obj.rating)||null, notes: obj.notes||'', dateAdded: obj.date||new Date().toISOString(), lists: [] };
+    }).filter(r=>r.name!=='Unknown'||true);
+  }
+
+  function confirmImport() {
+    if (!importPending.length) return;
+    const data = getData();
+    const existing = new Set(data.restaurants.map(r=>r.name.toLowerCase()));
+    const newItems = importPending.filter(r=>!existing.has(r.name.toLowerCase())).map(r=>({...r,id:r.id||Date.now().toString(36)+Math.random().toString(36).slice(2)}));
+    data.restaurants.push(...newItems);
+    saveData(data);
+    document.getElementById('importOverlay').classList.remove('open');
+    showToast(`Imported ${newItems.length} restaurants`);
+    renderList();
+    renderListChips();
+    importPending=[];
+  }
+
+  function exportJSON() {
+    const data = getData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'restaurants-backup.json';
+    a.click();
+    showToast('Exported!');
+  }
+
+  function closeOverlayIfOutside(e,id) { if (e.target===document.getElementById(id)) document.getElementById(id).classList.remove('open'); }
+  function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+
+  // Init
+  if(window.lucide) lucide.createIcons();
+  renderListChips();
+  renderList();
+</script>
+</body>
+</html>

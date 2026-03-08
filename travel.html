@@ -1,0 +1,430 @@
+<!--
+  LifeTracker — Travel Tracker (travel.html)
+  localStorage keys:
+    lifetracker_v1_travel  → { places: [...] }
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel — LifeTracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bg: #F9F7F4;
+    --card: #FFFFFF;
+    --text: #1A1A1A;
+    --text-muted: #888880;
+    --accent: #C4714A;
+    --accent-light: #F5E8E0;
+    --border: #EDEBE7;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --radius: 16px;
+    --font-head: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+  .container { max-width: 430px; margin: 0 auto; padding: 0 20px 100px; }
+
+  .nav { display: flex; align-items: center; justify-content: space-between; padding-top: 52px; padding-bottom: 20px; }
+  .back-btn { display: flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .back-btn:active { color: var(--accent); }
+  .page-title { font-family: var(--font-head); font-size: 24px; }
+  .nav-right { display: flex; gap: 8px; }
+  .icon-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+  .icon-btn:active { background: var(--accent-light); transform: scale(0.93); }
+
+  /* Stats */
+  .stats-row { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
+  .stats-row::-webkit-scrollbar { display: none; }
+  .stat-pill { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; white-space: nowrap; flex-shrink: 0; }
+  .stat-pill-val { font-family: var(--font-head); font-size: 22px; color: var(--accent); }
+  .stat-pill-lbl { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 1px; }
+
+  /* Regions */
+  .regions-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 20px; }
+  .regions-title { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .region-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .region-row:last-child { border-bottom: none; }
+  .region-count { font-weight: 600; color: var(--accent); }
+
+  /* Filter chips */
+  .filter-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 16px; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .chip { padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; white-space: nowrap; cursor: pointer; background: var(--card); transition: all 0.15s; user-select: none; }
+  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Search */
+  .search-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-family: var(--font-body); font-size: 14px; background: var(--card); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* Travel grid */
+  .places-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .place-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; cursor: pointer; transition: transform 0.15s; }
+  .place-card:active { transform: scale(0.96); }
+  .place-flag { font-size: 28px; margin-bottom: 8px; }
+  .place-city { font-family: var(--font-head); font-size: 16px; line-height: 1.2; margin-bottom: 3px; }
+  .place-country { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .place-bottom { display: flex; justify-content: space-between; align-items: center; }
+  .place-status { font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 6px; }
+  .status-visited { background: #E8F5E9; color: #2E7D32; }
+  .status-want { background: var(--accent-light); color: var(--accent); }
+  .place-rating { font-size: 13px; font-weight: 600; color: var(--accent); }
+
+  /* Empty */
+  .empty { text-align: center; padding: 48px 20px; color: var(--text-muted); grid-column: 1/-1; }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; line-height: 1.5; }
+
+  /* Section label */
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+
+  /* FAB */
+  .fab { position: fixed; bottom: 28px; right: 50%; transform: translateX(calc(50% + 175px)); width: 56px; height: 56px; border-radius: 18px; background: var(--accent); color: #fff; border: none; font-size: 26px; cursor: pointer; box-shadow: 0 4px 20px rgba(196,113,74,0.45); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; z-index: 10; }
+  .fab:active { transform: translateX(calc(50% + 175px)) scale(0.93); }
+  @media (max-width: 430px) { .fab { right: 20px; transform: none; } .fab:active { transform: scale(0.93); } }
+
+  /* Modal */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; backdrop-filter: blur(2px); align-items: flex-end; justify-content: center; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--card); width: 100%; max-width: 430px; border-radius: 24px 24px 0 0; padding: 24px 24px 40px; max-height: 92vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+  .overlay.open .modal { transform: translateY(0); }
+  .panel-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-family: var(--font-head); font-size: 22px; margin-bottom: 20px; }
+  .field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; }
+  .field-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; }
+  .field-input:focus { border-color: var(--accent); }
+  select.field-input { cursor: pointer; }
+  textarea.field-input { resize: vertical; min-height: 70px; }
+  .rating-row { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .rating-btn { padding: 7px 11px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; cursor: pointer; background: var(--bg); transition: all 0.15s; }
+  .rating-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-primary { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-secondary { background: none; color: #C0392B; border: 1px solid #C0392B; border-radius: 12px; padding: 14px 16px; font-family: var(--font-body); font-size: 15px; cursor: pointer; }
+
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a class="back-btn" href="index.html"><i data-lucide="arrow-left" width="18" height="18"></i> Back</a>
+    <div class="page-title">Travel</div>
+    <div class="nav-right">
+      <button class="icon-btn" onclick="exportJSON()" title="Export"><i data-lucide="download" width="16" height="16"></i></button>
+      <button class="icon-btn" onclick="openImport()" title="Import"><i data-lucide="upload" width="16" height="16"></i></button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Regions -->
+  <div class="regions-card" id="regionsCard" style="display:none">
+    <div class="regions-title">World regions</div>
+    <div id="regionsList"></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row" id="filterRow">
+    <div class="chip active" onclick="setFilter('status','All')" data-group="status">All</div>
+    <div class="chip" onclick="setFilter('status','Visited')" data-group="status">Visited</div>
+    <div class="chip" onclick="setFilter('status','Want to Go')" data-group="status">Want to Go</div>
+    <div class="chip" onclick="setFilter('trip','All')" data-group="trip" style="border-left: 2px solid var(--border); padding-left: 16px">Any trip</div>
+    <div class="chip" onclick="setFilter('trip','solo')" data-group="trip">Solo</div>
+    <div class="chip" onclick="setFilter('trip','partner')" data-group="trip">Partner</div>
+    <div class="chip" onclick="setFilter('trip','family')" data-group="trip">Family</div>
+    <div class="chip" onclick="setFilter('trip','friends')" data-group="trip">Friends</div>
+    <div class="chip" onclick="setFilter('trip','work')" data-group="trip">Work</div>
+  </div>
+
+  <input class="search-input" id="searchInput" type="text" placeholder="Search cities or countries..." oninput="renderPlaces()">
+
+  <div class="section-label" id="listLabel">Places</div>
+  <div class="places-grid" id="placesList"></div>
+</div>
+
+<button class="fab" onclick="openAddModal()">+</button>
+
+<!-- Add/Edit modal -->
+<div class="overlay" id="placeOverlay" onclick="closeOverlayIfOutside(event,'placeOverlay')">
+  <div class="modal">
+    <div class="panel-handle"></div>
+    <div class="modal-title" id="modalTitle">New Place</div>
+    <input type="hidden" id="editId">
+    <label class="field-label">City *</label>
+    <input class="field-input" id="pCity" type="text" placeholder="e.g. Tokyo" maxlength="100">
+    <label class="field-label">Country *</label>
+    <input class="field-input" id="pCountry" type="text" placeholder="e.g. Japan" maxlength="100" oninput="updateFlagPreview()">
+    <label class="field-label">Country code (2 letters, for flag)</label>
+    <input class="field-input" id="pCode" type="text" placeholder="e.g. JP" maxlength="2" style="text-transform:uppercase">
+    <label class="field-label">Date visited (month/year)</label>
+    <input class="field-input" id="pDate" type="month">
+    <label class="field-label">Status</label>
+    <select class="field-input" id="pStatus">
+      <option>Visited</option>
+      <option>Want to Go</option>
+    </select>
+    <label class="field-label">Trip type</label>
+    <select class="field-input" id="pTripType">
+      <option value="">—</option>
+      <option value="solo">Solo</option>
+      <option value="partner">With partner</option>
+      <option value="family">Family</option>
+      <option value="friends">Friends</option>
+      <option value="work">Work</option>
+    </select>
+    <label class="field-label">Rating (1–10)</label>
+    <div class="rating-row">
+      <div class="rating-btn" onclick="setRating(0)">—</div>
+      ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<div class="rating-btn" onclick="setRating(${n})">${n}</div>`).join('')}
+    </div>
+    <label class="field-label">Notes</label>
+    <textarea class="field-input" id="pNotes" placeholder="Highlights, memories..."></textarea>
+    <div class="btn-row">
+      <button class="btn-secondary" id="deleteBtn" onclick="deletePlace()" style="display:none"><i data-lucide="trash-2" width="14" height="14"></i></button>
+      <button class="btn-primary" onclick="savePlace()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="overlay" id="importOverlay" onclick="closeOverlayIfOutside(event,'importOverlay')">
+  <div class="modal">
+    <div class="panel-handle"></div>
+    <div class="modal-title">Import backup</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px">Import a JSON backup from this app.</p>
+    <input class="field-input" type="file" id="importFile" accept=".json" onchange="handleImport(event)">
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  if(window.lucide) lucide.createIcons();
+
+  let statusFilter = 'All';
+  let tripFilter = 'All';
+  let selectedRating = 0;
+
+  // Country to continent map (sampled)
+  const COUNTRY_CONTINENT = {
+    'United States':'North America','Canada':'North America','Mexico':'North America','Cuba':'North America','Jamaica':'North America',
+    'United Kingdom':'Europe','France':'Europe','Germany':'Europe','Italy':'Europe','Spain':'Europe','Portugal':'Europe','Netherlands':'Europe','Belgium':'Europe','Switzerland':'Europe','Austria':'Europe','Sweden':'Europe','Norway':'Europe','Denmark':'Europe','Finland':'Europe','Poland':'Europe','Czech Republic':'Europe','Hungary':'Europe','Romania':'Europe','Greece':'Europe','Croatia':'Europe','Slovenia':'Europe','Slovakia':'Europe','Ireland':'Europe','Scotland':'Europe','Wales':'Europe','Iceland':'Europe','Luxembourg':'Europe','Malta':'Europe','Cyprus':'Europe','Estonia':'Europe','Latvia':'Europe','Lithuania':'Europe','Serbia':'Europe','Montenegro':'Europe','Albania':'Europe','North Macedonia':'Europe','Bosnia':'Europe',
+    'Japan':'Asia','China':'Asia','South Korea':'Asia','Thailand':'Asia','Vietnam':'Asia','Indonesia':'Asia','Philippines':'Asia','Malaysia':'Asia','Singapore':'Asia','India':'Asia','Nepal':'Asia','Sri Lanka':'Asia','Cambodia':'Asia','Myanmar':'Asia','Laos':'Asia','Taiwan':'Asia','Hong Kong':'Asia','Macau':'Asia','Mongolia':'Asia','Bangladesh':'Asia','Pakistan':'Asia','Turkey':'Asia','Israel':'Asia','Jordan':'Asia','Lebanon':'Asia','UAE':'Asia','Saudi Arabia':'Asia','Qatar':'Asia','Kuwait':'Asia','Bahrain':'Asia','Oman':'Asia','Iran':'Asia','Iraq':'Asia','Uzbekistan':'Asia','Kazakhstan':'Asia','Georgia':'Asia','Armenia':'Asia','Azerbaijan':'Asia',
+    'Australia':'Oceania','New Zealand':'Oceania','Fiji':'Oceania','Papua New Guinea':'Oceania',
+    'Brazil':'South America','Argentina':'South America','Chile':'South America','Peru':'South America','Colombia':'South America','Ecuador':'South America','Bolivia':'South America','Uruguay':'South America','Paraguay':'South America','Venezuela':'South America',
+    'South Africa':'Africa','Egypt':'Africa','Morocco':'Africa','Kenya':'Africa','Tanzania':'Africa','Ethiopia':'Africa','Ghana':'Africa','Nigeria':'Africa','Rwanda':'Africa','Uganda':'Africa','Zambia':'Africa','Zimbabwe':'Africa','Botswana':'Africa','Namibia','Africa','Mozambique':'Africa','Madagascar':'Africa','Tunisia':'Africa',
+    'Russia':'Europe'
+  };
+
+  function getContinent(country) {
+    return COUNTRY_CONTINENT[country] || 'Other';
+  }
+
+  function getFlagEmoji(code) {
+    if (!code || code.length !== 2) return '🌍';
+    const cp = code.toUpperCase().split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65);
+    return String.fromCodePoint(...cp);
+  }
+
+  function getData() {
+    try { return JSON.parse(localStorage.getItem('lifetracker_v1_travel') || '{"places":[]}'); }
+    catch(e) { return { places: [] }; }
+  }
+  function saveData(d) {
+    try { localStorage.setItem('lifetracker_v1_travel', JSON.stringify(d)); }
+    catch(e) { showToast('Storage full!'); }
+  }
+
+  function setFilter(group, val) {
+    if (group === 'status') statusFilter = val;
+    else tripFilter = val;
+    document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => {
+      c.classList.toggle('active', c.textContent.trim() === val || (val==='All' && (c.textContent.trim()==='All'||c.textContent.trim()==='Any trip')));
+    });
+    renderPlaces();
+  }
+
+  function updateStats() {
+    const data = getData();
+    const visited = (data.places||[]).filter(p=>p.status==='Visited');
+    const countries = new Set(visited.map(p=>p.country)).size;
+    const continents = new Set(visited.map(p=>getContinent(p.country))).size;
+    const recent = [...visited].sort((a,b)=>(b.dateVisited||'').localeCompare(a.dateVisited||''))[0];
+
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat-pill"><div class="stat-pill-val">${visited.length}</div><div class="stat-pill-lbl">Cities visited</div></div>
+      <div class="stat-pill"><div class="stat-pill-val">${countries}</div><div class="stat-pill-lbl">Countries</div></div>
+      <div class="stat-pill"><div class="stat-pill-val">${continents}</div><div class="stat-pill-lbl">Continents</div></div>
+      <div class="stat-pill"><div class="stat-pill-val" style="font-size:14px">${recent?recent.city:'—'}</div><div class="stat-pill-lbl">Most recent</div></div>
+    `;
+
+    // Regions
+    const regionCounts = {};
+    visited.forEach(p => {
+      const c = getContinent(p.country);
+      regionCounts[c] = (regionCounts[c]||0)+1;
+    });
+    const regions = Object.entries(regionCounts).sort((a,b)=>b[1]-a[1]);
+    if (regions.length) {
+      document.getElementById('regionsCard').style.display='';
+      document.getElementById('regionsList').innerHTML = regions.map(([r,n])=>`
+        <div class="region-row"><span>${r}</span><span class="region-count">${n} city${n!==1?'ies':'y'}</span></div>
+      `).join('');
+    } else {
+      document.getElementById('regionsCard').style.display='none';
+    }
+  }
+
+  function renderPlaces() {
+    const data = getData();
+    let items = data.places || [];
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    if (q) items = items.filter(p => p.city.toLowerCase().includes(q) || p.country.toLowerCase().includes(q));
+    if (statusFilter !== 'All') items = items.filter(p => p.status === statusFilter);
+    if (tripFilter !== 'All') items = items.filter(p => p.tripType === tripFilter);
+    items.sort((a,b) => (b.dateVisited||'').localeCompare(a.dateVisited||''));
+
+    const el = document.getElementById('placesList');
+    if (!items.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">✈️</div><div class="empty-text">${(data.places||[]).length?'No matches found.':'No places yet.<br>Tap + to add your first trip.'}</div></div>`;
+      return;
+    }
+
+    el.innerHTML = items.map(p => {
+      const flag = getFlagEmoji(p.countryCode);
+      const isVisited = p.status === 'Visited';
+      return `
+        <div class="place-card" onclick="openEditModal('${p.id}')">
+          <div class="place-flag">${flag}</div>
+          <div class="place-city">${p.city}</div>
+          <div class="place-country">${p.country}${p.dateVisited?` · ${p.dateVisited.slice(0,7).replace('-','/')}`:''}</div>
+          <div class="place-bottom">
+            <div class="place-status ${isVisited?'status-visited':'status-want'}">${isVisited?'Visited':'Want'}</div>
+            ${p.rating ? `<div class="place-rating">${p.rating}/10</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openAddModal() {
+    document.getElementById('editId').value='';
+    document.getElementById('modalTitle').textContent='New Place';
+    document.getElementById('pCity').value='';
+    document.getElementById('pCountry').value='';
+    document.getElementById('pCode').value='';
+    document.getElementById('pDate').value='';
+    document.getElementById('pStatus').value='Visited';
+    document.getElementById('pTripType').value='';
+    document.getElementById('pNotes').value='';
+    document.getElementById('deleteBtn').style.display='none';
+    selectedRating=0; updateRatingBtns();
+    document.getElementById('placeOverlay').classList.add('open');
+  }
+
+  function openEditModal(id) {
+    const data=getData();
+    const p=data.places.find(x=>x.id===id);
+    if(!p)return;
+    document.getElementById('editId').value=id;
+    document.getElementById('modalTitle').textContent='Edit Place';
+    document.getElementById('pCity').value=p.city;
+    document.getElementById('pCountry').value=p.country;
+    document.getElementById('pCode').value=p.countryCode||'';
+    document.getElementById('pDate').value=p.dateVisited||'';
+    document.getElementById('pStatus').value=p.status||'Visited';
+    document.getElementById('pTripType').value=p.tripType||'';
+    document.getElementById('pNotes').value=p.notes||'';
+    document.getElementById('deleteBtn').style.display='block';
+    selectedRating=p.rating||0; updateRatingBtns();
+    document.getElementById('placeOverlay').classList.add('open');
+  }
+
+  function setRating(n){selectedRating=n;updateRatingBtns();}
+  function updateRatingBtns(){
+    document.querySelectorAll('.rating-btn').forEach(b=>{
+      const v=b.textContent==='—'?0:parseInt(b.textContent);
+      b.classList.toggle('active',v===selectedRating);
+    });
+  }
+
+  function savePlace() {
+    const city=document.getElementById('pCity').value.trim();
+    const country=document.getElementById('pCountry').value.trim();
+    if(!city||!country){showToast('City and country required');return;}
+    const data=getData();
+    const editId=document.getElementById('editId').value;
+    const id=editId||Date.now().toString(36);
+    const p={
+      id,city,country,
+      countryCode:document.getElementById('pCode').value.trim().toUpperCase(),
+      dateVisited:document.getElementById('pDate').value,
+      status:document.getElementById('pStatus').value,
+      tripType:document.getElementById('pTripType').value,
+      rating:selectedRating||null,
+      notes:document.getElementById('pNotes').value.trim()
+    };
+    if(!data.places)data.places=[];
+    if(editId){const idx=data.places.findIndex(x=>x.id===editId);if(idx>=0)data.places[idx]=p;}
+    else data.places.push(p);
+    saveData(data);
+    document.getElementById('placeOverlay').classList.remove('open');
+    showToast(editId?'Updated!':'Place added!');
+    renderPlaces();
+    updateStats();
+  }
+
+  function deletePlace(){
+    const id=document.getElementById('editId').value;
+    if(!id||!confirm('Delete this place?'))return;
+    const data=getData();
+    data.places=data.places.filter(p=>p.id!==id);
+    saveData(data);
+    document.getElementById('placeOverlay').classList.remove('open');
+    showToast('Deleted');
+    renderPlaces();
+    updateStats();
+  }
+
+  function exportJSON(){
+    const data=getData();
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='travel-backup.json';a.click();
+    showToast('Exported!');
+  }
+
+  function openImport(){document.getElementById('importFile').value='';document.getElementById('importOverlay').classList.add('open');}
+  function handleImport(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const json=JSON.parse(ev.target.result);
+        if(!json.places)throw new Error();
+        saveData(json);
+        document.getElementById('importOverlay').classList.remove('open');
+        showToast(`Imported ${json.places.length} places`);
+        renderPlaces();updateStats();
+      }catch{showToast('Could not parse file');}
+    };
+    reader.readAsText(file);
+  }
+
+  function closeOverlayIfOutside(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('open');}
+  function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+
+  if(window.lucide) lucide.createIcons();
+  updateStats();
+  renderPlaces();
+</script>
+</body>
+</html>
