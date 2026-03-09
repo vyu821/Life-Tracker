@@ -1,568 +1,1137 @@
 <!--
   LifeTracker — Restaurant Tracker (restaurants.html)
-  localStorage keys:
-    lifetracker_v1_restaurants  → { restaurants: [...], lists: [...] }
+  localStorage key: lifetracker_v1_restaurants → { restaurants: [...], lists: [...] }
+  Fields per restaurant: lat, lng, eloRating, eloGames, eloRanked, imported
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Restaurants — LifeTracker</title>
+<title>Nommies — LifeTracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <style>
   :root {
-    --bg: #F9F7F4;
-    --card: #FFFFFF;
-    --text: #1A1A1A;
-    --text-muted: #888880;
-    --accent: #C4714A;
-    --accent-light: #F5E8E0;
-    --border: #EDEBE7;
-    --shadow: 0 2px 12px rgba(0,0,0,0.07);
-    --radius: 16px;
-    --font-head: 'DM Serif Display', serif;
-    --font-body: 'DM Sans', sans-serif;
+    --bg:#F9F7F4;--card:#FFFFFF;--text:#1A1A1A;--text-muted:#888880;
+    --accent:#C4714A;--accent-light:#F5E8E0;--border:#EDEBE7;
+    --shadow:0 2px 12px rgba(0,0,0,0.07);--radius:16px;
+    --font-head:'DM Serif Display',serif;--font-body:'DM Sans',sans-serif;
+    --visited-pin:#C4714A;--want-pin:#6B8CAE;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
-  .container { max-width: 430px; margin: 0 auto; padding: 0 20px 100px; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;}
+  .container{max-width:430px;margin:0 auto;padding:0 20px 100px;}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding-top:52px;padding-bottom:20px;}
+  .back-btn{display:flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:14px;font-weight:500;}
+  .back-btn:active{color:var(--accent);}
+  .page-title{font-family:var(--font-head);font-size:24px;}
+  .nav-right{display:flex;gap:8px;}
+  .icon-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:all 0.15s;}
+  .icon-btn:active{background:var(--accent-light);transform:scale(0.93);}
 
-  .nav { display: flex; align-items: center; justify-content: space-between; padding-top: 52px; padding-bottom: 20px; }
-  .back-btn { display: flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
-  .back-btn:active { color: var(--accent); }
-  .page-title { font-family: var(--font-head); font-size: 24px; }
-  .nav-right { display: flex; gap: 8px; }
-  .icon-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
-  .icon-btn:active { background: var(--accent-light); transform: scale(0.93); }
+  /* View tabs */
+  .view-tabs{display:flex;gap:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:16px;}
+  .view-tab{flex:1;padding:8px 0;text-align:center;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-radius:9px;transition:all 0.15s;user-select:none;}
+  .view-tab.active{background:var(--accent);color:#fff;}
 
   /* Search */
-  .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .search-input { flex: 1; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-family: var(--font-body); font-size: 14px; background: var(--card); color: var(--text); outline: none; transition: border-color 0.15s; }
-  .search-input:focus { border-color: var(--accent); }
-  .filter-btn { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-muted); white-space: nowrap; transition: all 0.15s; }
-  .filter-btn:active { background: var(--accent-light); }
-  .filter-btn.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .search-row{display:flex;gap:8px;margin-bottom:12px;}
+  .search-input{flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:14px;background:var(--card);color:var(--text);outline:none;transition:border-color 0.15s;}
+  .search-input:focus{border-color:var(--accent);}
+  .filter-btn{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:0 14px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-muted);white-space:nowrap;transition:all 0.15s;}
+  .filter-btn.active{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+  .filter-panel{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:16px;margin-bottom:16px;display:none;}
+  .filter-panel.open{display:block;}
+  .filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
   /* List chips */
-  .list-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; scrollbar-width: none; }
-  .list-chips::-webkit-scrollbar { display: none; }
-  .chip { padding: 7px 16px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; white-space: nowrap; cursor: pointer; background: var(--card); transition: all 0.15s; user-select: none; }
-  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .list-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none;}
+  .list-chips::-webkit-scrollbar{display:none;}
+  .chip{padding:7px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;white-space:nowrap;cursor:pointer;background:var(--card);transition:all 0.15s;user-select:none;}
+  .chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 
-  /* Sort */
-  .sort-row { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
-  .sort-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-  .sort-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: var(--font-body); font-size: 13px; background: var(--card); color: var(--text); cursor: pointer; outline: none; }
-
-  /* Restaurant cards */
-  .restaurant-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: transform 0.15s; }
-  .restaurant-card:active { transform: scale(0.97); }
-  .r-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .r-name { font-family: var(--font-head); font-size: 18px; line-height: 1.2; flex: 1; }
-  .r-rating { background: var(--accent); color: #fff; border-radius: 8px; padding: 3px 8px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
-  .r-meta { font-size: 12px; color: var(--text-muted); margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .r-meta span { display: flex; align-items: center; gap: 3px; }
-  .r-status { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-top: 8px; }
-  .status-Visited { background: #E8F5E9; color: #2E7D32; }
-  .status-Want { background: var(--accent-light); color: var(--accent); }
-  .status-Favorite { background: #FFF3E0; color: #E65100; }
-  .r-notes { font-size: 13px; color: var(--text-muted); margin-top: 8px; line-height: 1.4; }
+  /* Cards */
+  .restaurant-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);padding:14px 12px 14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;}
+  .r-body{flex:1;min-width:0;cursor:pointer;}
+  .r-body:active{opacity:0.8;}
+  .r-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .r-name{font-family:var(--font-head);font-size:18px;line-height:1.2;flex:1;}
+  .r-badges{display:flex;gap:5px;align-items:flex-start;flex-shrink:0;}
+  .r-rating{background:var(--accent);color:#fff;border-radius:8px;padding:3px 8px;font-size:13px;font-weight:600;}
+  .r-elo-rank{background:#1A1A1A;color:#fff;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;}
+  .r-elo-rank.top3{background:linear-gradient(135deg,#B8860B,#DAA520);}
+  .r-meta{font-size:12px;color:var(--text-muted);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .r-maps-link{color:var(--accent);text-decoration:none;font-size:12px;}
+  .r-status{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-top:8px;}
+  .status-Visited{background:#E8F5E9;color:#2E7D32;}
+  .status-Want{background:var(--accent-light);color:var(--accent);}
+  .status-Favorite{background:#FFF3E0;color:#E65100;}
+  .r-notes{font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.4;}
+  .r-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;margin-top:2px;}
+  .r-del-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+  .r-del-btn:active{background:#FEE2E2;border-color:#FCA5A5;color:#C0392B;transform:scale(0.92);}
+  .r-rank-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:14px;}
+  .r-rank-btn:active{background:var(--accent);color:#fff;transform:scale(0.92);}
+  .r-loc-btn{width:30px;height:30px;border-radius:8px;border:1px solid #6B8CAE;background:#EEF3F8;color:#6B8CAE;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:13px;}
+  .r-loc-btn:active{background:#6B8CAE;color:#fff;}
 
   /* Stats */
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .stat-card { background: var(--card); border-radius: var(--radius); padding: 14px; border: 1px solid var(--border); }
-  .stat-val { font-family: var(--font-head); font-size: 22px; color: var(--accent); }
-  .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
-  .stat-card.wide { grid-column: 1/-1; }
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+  .stat-card{background:var(--card);border-radius:var(--radius);padding:14px;border:1px solid var(--border);}
+  .stat-val{font-family:var(--font-head);font-size:22px;color:var(--accent);}
+  .stat-lbl{font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:500;}
+  .stat-card.wide{grid-column:1/-1;}
+  .empty{text-align:center;padding:48px 20px;color:var(--text-muted);}
+  .empty-icon{font-size:40px;margin-bottom:12px;}
+  .empty-text{font-size:15px;line-height:1.5;}
 
-  .empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
-  .empty-icon { font-size: 40px; margin-bottom: 12px; }
-  .empty-text { font-size: 15px; line-height: 1.5; }
+  /* Map */
+  #mapView{display:none;}
+  #mapContainer{width:calc(100% + 40px);margin-left:-20px;height:55vh;min-height:300px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:16px;}
+  #map{width:100%;height:100%;}
+  .map-legend{display:flex;gap:20px;padding:10px 0 14px;font-size:12px;color:var(--text-muted);}
+  .legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+  .map-unlocated{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+  .map-unlocated-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;}
+  .unlocated-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;gap:10px;}
+  .unlocated-item:last-child{border-bottom:none;}
+  .locate-btn{padding:5px 12px;background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;}
+  .locate-btn:active{background:var(--accent);color:#fff;}
+  .locate-btn:disabled{opacity:0.5;pointer-events:none;}
 
   /* FAB */
-  .fab { position: fixed; bottom: 28px; right: 50%; transform: translateX(calc(50% + 175px)); width: 56px; height: 56px; border-radius: 18px; background: var(--accent); color: #fff; border: none; font-size: 26px; cursor: pointer; box-shadow: 0 4px 20px rgba(196,113,74,0.45); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; z-index: 10; }
-  .fab:active { transform: translateX(calc(50% + 175px)) scale(0.93); }
-  @media (max-width: 430px) { .fab { right: 20px; transform: none; } .fab:active { transform: scale(0.93); } }
+  .fab{position:fixed;bottom:28px;right:50%;transform:translateX(calc(50% + 175px));width:56px;height:56px;border-radius:18px;background:var(--accent);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(196,113,74,0.45);display:flex;align-items:center;justify-content:center;transition:transform 0.15s;z-index:10;}
+  .fab:active{transform:translateX(calc(50% + 175px)) scale(0.93);}
+  @media (max-width:430px){.fab{right:20px;transform:none;}.fab:active{transform:scale(0.93);}}
 
-  /* Modal */
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; backdrop-filter: blur(2px); align-items: flex-end; justify-content: center; }
-  .overlay.open { display: flex; }
-  .modal { background: var(--card); width: 100%; max-width: 430px; border-radius: 24px 24px 0 0; padding: 24px 24px 40px; max-height: 92vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
-  .overlay.open .modal { transform: translateY(0); }
-  .panel-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
-  .modal-title { font-family: var(--font-head); font-size: 22px; margin-bottom: 20px; }
-  .field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; }
-  .field-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; }
-  .field-input:focus { border-color: var(--accent); }
-  select.field-input { cursor: pointer; }
-  textarea.field-input { resize: vertical; min-height: 80px; }
-  .rating-row { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
-  .rating-btn { padding: 7px 11px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; cursor: pointer; background: var(--bg); transition: all 0.15s; }
-  .rating-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-row { display: flex; gap: 8px; }
-  .btn-primary { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; }
-  .btn-secondary { flex: 0; background: none; color: #C0392B; border: 1px solid #C0392B; border-radius: 12px; padding: 14px 16px; font-family: var(--font-body); font-size: 15px; cursor: pointer; }
-  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  /* Overlays / Modals */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;backdrop-filter:blur(2px);align-items:flex-end;justify-content:center;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--card);width:100%;max-width:430px;border-radius:24px 24px 0 0;padding:24px 24px 40px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);}
+  .overlay.open .modal{transform:translateY(0);}
+  .panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+  .modal-title{font-family:var(--font-head);font-size:22px;margin-bottom:20px;}
+  .field-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;display:block;}
+  .field-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:15px;background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s;margin-bottom:16px;}
+  .field-input:focus{border-color:var(--accent);}
+  select.field-input{cursor:pointer;}
+  textarea.field-input{resize:vertical;min-height:80px;}
+  .rating-row{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;}
+  .rating-btn{padding:7px 11px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;background:var(--bg);transition:all 0.15s;}
+  .rating-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn-row{display:flex;gap:8px;}
+  .btn-primary{flex:1;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;}
+  .btn-secondary{flex:0;background:none;color:#C0392B;border:1px solid #C0392B;border-radius:12px;padding:14px 16px;font-family:var(--font-body);font-size:15px;cursor:pointer;}
+  .import-hint{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.65;color:var(--text-muted);}
+  .import-hint strong{color:var(--text);}
+  .import-hint code{background:var(--border);border-radius:4px;padding:1px 5px;font-size:12px;color:var(--text);}
+  .import-preview-box{background:var(--accent-light);border-radius:12px;padding:14px;margin-bottom:16px;font-size:14px;line-height:1.6;}
 
-  /* Filter panel */
-  .filter-panel { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; display: none; }
-  .filter-panel.open { display: block; }
-  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* Elo modal — sits above everything else */
+  #eloOverlay{z-index:300;}
+  .elo-modal{background:var(--card);width:100%;max-width:430px;border-radius:24px 24px 0 0;padding:28px 24px 44px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);}
+  #eloOverlay.open .elo-modal{transform:translateY(0);}
+  .elo-header{text-align:center;margin-bottom:22px;}
+  .elo-title{font-family:var(--font-head);font-size:22px;margin-bottom:6px;}
+  .elo-subtitle{font-size:13px;color:var(--text-muted);}
+  .elo-progress{display:flex;gap:6px;justify-content:center;margin-bottom:22px;}
+  .elo-pip{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background 0.2s;}
+  .elo-pip.done{background:var(--accent);}
+  .elo-pip.active{background:var(--text);}
+  .elo-new-card{background:linear-gradient(135deg,var(--accent) 0%,#A05030 100%);color:#fff;border-radius:18px;padding:20px;margin-bottom:12px;text-align:center;}
+  .elo-new-label{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:8px;}
+  .elo-new-name{font-family:var(--font-head);font-size:22px;line-height:1.2;margin-bottom:5px;}
+  .elo-new-meta{font-size:12px;opacity:.75;}
+  .elo-vs{text-align:center;font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;margin-bottom:12px;}
+  .elo-chal-card{background:var(--bg);border:2px solid var(--border);border-radius:18px;padding:18px 20px;margin-bottom:22px;text-align:center;}
+  .elo-chal-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+  .elo-chal-name{font-family:var(--font-head);font-size:20px;line-height:1.2;margin-bottom:4px;}
+  .elo-chal-meta{font-size:12px;color:var(--text-muted);margin-bottom:6px;}
+  .elo-chal-badges{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;}
+  .elo-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+  .elo-btn{padding:14px 6px;border-radius:14px;border:2px solid var(--border);background:var(--card);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;color:var(--text);}
+  .elo-btn:active{transform:scale(0.94);}
+  .elo-btn.better{border-color:#4CAF50;}
+  .elo-btn.better:active,.elo-btn.better.chosen{background:#4CAF50;color:#fff;}
+  .elo-btn.same{border-color:#6B8CAE;}
+  .elo-btn.same:active,.elo-btn.same.chosen{background:#6B8CAE;color:#fff;}
+  .elo-btn.worse{border-color:#EF5350;}
+  .elo-btn.worse:active,.elo-btn.worse.chosen{background:#EF5350;color:#fff;}
+  .elo-btn-icon{font-size:22px;display:block;margin-bottom:3px;}
+  .elo-skip-btn{width:100%;padding:11px;background:none;border:1px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:13px;color:var(--text-muted);cursor:pointer;}
+  .elo-result{text-align:center;padding:8px 0 8px;}
+  .elo-result-num{font-family:var(--font-head);font-size:56px;color:var(--accent);line-height:1;}
+  .elo-result-of{font-size:14px;color:var(--text-muted);margin-top:4px;margin-bottom:16px;}
+  .elo-tier-badge{display:inline-block;padding:7px 20px;border-radius:20px;font-size:15px;font-weight:800;margin-bottom:16px;}
+  .elo-result-meta{font-size:13px;color:var(--text-muted);margin-bottom:28px;}
 
-  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
-  .toast.show { opacity: 1; }
+  /* Ranking view */
+  .rank-row{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .rank-num{font-family:var(--font-head);font-size:22px;color:var(--accent);width:32px;text-align:center;flex-shrink:0;}
+  .rank-info{flex:1;min-width:0;}
+  .rank-name{font-family:var(--font-head);font-size:16px;line-height:1.2;margin-bottom:3px;}
+  .rank-meta{font-size:12px;color:var(--text-muted);}
+
+  /* Leaflet popup */
+  .leaflet-popup-content-wrapper{border-radius:14px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,0.15)!important;overflow:hidden;}
+  .leaflet-popup-content{margin:0!important;}
+  .map-popup{padding:14px 16px;min-width:190px;font-family:'DM Sans',sans-serif;}
+  .map-popup-name{font-family:'DM Serif Display',serif;font-size:16px;line-height:1.2;margin-bottom:4px;color:#1A1A1A;}
+  .map-popup-meta{font-size:11px;color:#888880;margin-bottom:8px;}
+  .map-popup-badges{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;align-items:center;}
+  .map-popup-edit{width:100%;padding:8px;background:#C4714A;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+  .map-popup-edit:active{background:#A05030;}
+
+  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="nav">
     <a class="back-btn" href="index.html"><i data-lucide="arrow-left" width="18" height="18"></i> Back</a>
-    <div class="page-title">Restaurants</div>
+    <div class="page-title">Nommies</div>
     <div class="nav-right">
-      <button class="icon-btn" onclick="setView('stats')" title="Stats"><i data-lucide="bar-chart-2" width="16" height="16"></i></button>
       <button class="icon-btn" onclick="openImport()" title="Import"><i data-lucide="upload" width="16" height="16"></i></button>
       <button class="icon-btn" onclick="exportJSON()" title="Export"><i data-lucide="download" width="16" height="16"></i></button>
     </div>
   </div>
 
+  <div class="view-tabs">
+    <div class="view-tab active" id="tab-list"    onclick="setView('list')">List</div>
+    <div class="view-tab"        id="tab-map"     onclick="setView('map')">Map</div>
+    <div class="view-tab"        id="tab-ranking" onclick="setView('ranking')">Ranking</div>
+    <div class="view-tab"        id="tab-stats"   onclick="setView('stats')">Stats</div>
+  </div>
+
+  <!-- LIST -->
   <div id="viewList">
     <div class="search-row">
-      <input class="search-input" id="searchInput" type="text" placeholder="Search restaurants..." oninput="renderList()">
-      <button class="filter-btn" id="filterToggle" onclick="toggleFilters()"><i data-lucide="sliders-horizontal" width="14" height="14"></i> Filter</button>
+      <input class="search-input" id="searchInput" type="text"  placeholder="Search nommies..." oninput="renderList()">
+      <button class="filter-btn" id="filterToggle" onclick="toggleFilters()">
+        <i data-lucide="sliders-horizontal" width="14" height="14"></i> Filter
+      </button>
     </div>
-
     <div class="filter-panel" id="filterPanel">
       <div class="filter-grid">
-        <div>
-          <label class="field-label">Cuisine</label>
-          <input class="field-input" id="filterCuisine" type="text" placeholder="e.g. Italian" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
-        </div>
-        <div>
-          <label class="field-label">City</label>
-          <input class="field-input" id="filterCity" type="text" placeholder="e.g. NYC" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
-        </div>
-        <div>
-          <label class="field-label">Min rating</label>
-          <input class="field-input" id="filterMinRating" type="number" min="0" max="10" placeholder="0" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
-        </div>
-        <div>
-          <label class="field-label">Sort by</label>
+        <div><label class="field-label">Cuisine</label><input class="field-input" id="filterCuisine" type="text" placeholder="e.g. Japanese" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px"></div>
+        <div><label class="field-label">City</label><input class="field-input" id="filterCity" type="text" placeholder="e.g. SF" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px"></div>
+        <div><label class="field-label">Min rating</label><input class="field-input" id="filterMinRating" type="number" min="0" max="10" placeholder="0" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px"></div>
+        <div><label class="field-label">Sort by</label>
           <select class="field-input" id="sortSelect" onchange="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
             <option value="date">Date added</option>
+            <option value="elo">Elo rank</option>
             <option value="rating">Rating</option>
             <option value="alpha">A–Z</option>
           </select>
         </div>
       </div>
     </div>
-
     <div class="list-chips" id="listChips"></div>
     <div id="restaurantList"></div>
   </div>
 
+  <!-- MAP -->
+  <div id="mapView">
+    <div id="mapContainer"><div id="map"></div></div>
+    <div class="map-legend">
+      <span><span class="legend-dot" style="background:var(--visited-pin)"></span>Visited</span>
+      <span><span class="legend-dot" style="background:var(--want-pin)"></span>Want to go</span>
+    </div>
+    <div id="mapUnlocated"></div>
+  </div>
+
+  <!-- RANKING -->
+  <div id="viewRanking" style="display:none">
+    <div id="rankingList"></div>
+  </div>
+
+  <!-- STATS -->
   <div id="viewStats" style="display:none"></div>
 </div>
 
 <button class="fab" onclick="openAddModal()" id="fabBtn">+</button>
 
-<!-- Add/Edit modal -->
+<!-- ADD/EDIT MODAL -->
 <div class="overlay" id="restaurantOverlay" onclick="closeOverlayIfOutside(event,'restaurantOverlay')">
   <div class="modal">
     <div class="panel-handle"></div>
-    <div class="modal-title" id="modalTitle">New Restaurant</div>
+    <div class="modal-title" id="modalTitle">New Nommie</div>
     <input type="hidden" id="editId">
     <label class="field-label">Name *</label>
-    <input class="field-input" id="rName" type="text" placeholder="Restaurant name" maxlength="100">
+    <input class="field-input" id="rName" type="text" placeholder="Nommie name" maxlength="100">
     <label class="field-label">Cuisine</label>
     <input class="field-input" id="rCuisine" type="text" placeholder="e.g. Japanese, Italian">
     <label class="field-label">Neighborhood / City</label>
-    <input class="field-input" id="rNeighborhood" type="text" placeholder="e.g. West Village, NYC">
+    <input class="field-input" id="rNeighborhood" type="text" placeholder="e.g. Mission, SF">
     <label class="field-label">Status</label>
     <select class="field-input" id="rStatus">
-      <option>Visited</option>
-      <option>Want to Go</option>
-      <option>Favorite</option>
+      <option>Visited</option><option>Want to Go</option><option>Favorite</option>
     </select>
-    <label class="field-label">Rating (1–10, optional)</label>
-    <div class="rating-row" id="ratingBtns">
+    <label class="field-label">Rating (1–10, seeds your Elo start point)</label>
+    <div class="rating-row">
       <div class="rating-btn" onclick="setRating(0)">—</div>
-      ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<div class="rating-btn" onclick="setRating(${n})">${n}</div>`).join('')}
+      <div class="rating-btn" onclick="setRating(1)">1</div><div class="rating-btn" onclick="setRating(2)">2</div>
+      <div class="rating-btn" onclick="setRating(3)">3</div><div class="rating-btn" onclick="setRating(4)">4</div>
+      <div class="rating-btn" onclick="setRating(5)">5</div><div class="rating-btn" onclick="setRating(6)">6</div>
+      <div class="rating-btn" onclick="setRating(7)">7</div><div class="rating-btn" onclick="setRating(8)">8</div>
+      <div class="rating-btn" onclick="setRating(9)">9</div><div class="rating-btn" onclick="setRating(10)">10</div>
     </div>
     <label class="field-label">List</label>
     <select class="field-input" id="rList"></select>
     <label class="field-label">Notes</label>
     <textarea class="field-input" id="rNotes" placeholder="What did you think?"></textarea>
+    <label class="field-label">Google Maps URL</label>
+    <input class="field-input" id="rUrl" type="url" placeholder="https://maps.google.com/...">
     <div class="btn-row">
-      <button class="btn-secondary" id="deleteBtn" onclick="deleteRestaurant()" style="display:none"><i data-lucide="trash-2" width="14" height="14"></i></button>
+      <button class="btn-secondary" id="deleteBtn" onclick="deleteRestaurant()" style="display:none">
+        <i data-lucide="trash-2" width="14" height="14"></i>
+      </button>
       <button class="btn-primary" onclick="saveRestaurant()">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Import modal -->
+<!-- IMPORT MODAL -->
 <div class="overlay" id="importOverlay" onclick="closeOverlayIfOutside(event,'importOverlay')">
   <div class="modal">
     <div class="panel-handle"></div>
     <div class="modal-title">Import</div>
-    <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.5">Import from Google Takeout JSON, a CSV file, or a JSON backup from this app.</p>
-    <label class="field-label">Select file</label>
+    <div class="import-hint">
+      Supports <strong>Google Maps saved list CSV</strong> — all columns (<code>Title</code>, <code>Note</code>, <code>URL</code>) preserved. Duplicates skipped automatically.<br><br>
+      <strong>To export:</strong> Google Maps → Saved → your list → ⋮ → Download list.<br>
+      Also accepts generic CSV and JSON backups from this app.
+    </div>
+    <label class="field-label">Select file (.csv or .json)</label>
     <input class="field-input" type="file" id="importFile" accept=".json,.csv" onchange="handleImportFile(event)">
     <div id="importPreview" style="display:none">
-      <div style="background:var(--accent-light);border-radius:12px;padding:14px;margin-bottom:16px">
-        <div id="importPreviewText" style="font-size:14px;line-height:1.5"></div>
-      </div>
-      <button class="btn-primary" onclick="confirmImport()">Import all</button>
+      <div class="import-preview-box" id="importPreviewText"></div>
+      <button class="btn-primary" onclick="confirmImport()">Import</button>
     </div>
   </div>
 </div>
 
-<!-- Custom list modal -->
+<!-- MANAGE LISTS MODAL -->
 <div class="overlay" id="listOverlay" onclick="closeOverlayIfOutside(event,'listOverlay')">
   <div class="modal">
     <div class="panel-handle"></div>
     <div class="modal-title">Manage Lists</div>
-    <div class="add-type-row" style="display:flex;gap:8px;margin-bottom:16px">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
       <input class="field-input" id="newListInput" type="text" placeholder="New list name" maxlength="30" style="flex:1;margin-bottom:0">
-      <button class="btn-sm" style="padding:10px 14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer" onclick="addCustomList()">Add</button>
+      <button style="padding:10px 14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer" onclick="addCustomList()">Add</button>
     </div>
     <div id="customListsList"></div>
   </div>
 </div>
 
+<!-- ELO GAME MODAL (z-index 300, above everything) -->
+<div class="overlay" id="eloOverlay">
+  <div class="elo-modal" id="eloModal"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-  if(window.lucide) lucide.createIcons();
+// ════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ════════════════════════════════════════════════
+if (window.lucide) lucide.createIcons();
 
-  const DEFAULT_LISTS = ['All', 'Visited', 'Want to Go', 'Favorites'];
-  let selectedList = 'All';
-  let selectedRating = 0;
-  let importPending = [];
-  let currentView = 'list';
+const DEFAULT_LISTS = ['All','Visited','Want to Go','Favorites'];
+const ELO_K = 32;
+const ELO_DEFAULT = 1200;
+const VISITED_STATUSES = ['Visited','Favorite'];
 
-  function getData() {
-    try { return JSON.parse(localStorage.getItem('lifetracker_v1_restaurants') || '{"restaurants":[],"lists":[]}'); }
-    catch(e) { return { restaurants: [], lists: [] }; }
+let selectedList='All', selectedRating=0, importPending=[], currentView='list';
+let mapInstance=null, mapMarkers=[];
+let eloState=null; // { newId, pool, lo, hi, comparisons, maxComparisons }
+
+// ════════════════════════════════════════════════
+//  STORAGE
+// ════════════════════════════════════════════════
+function getData(){
+  try{return JSON.parse(localStorage.getItem('lifetracker_v1_restaurants')||'{"restaurants":[],"lists":[]}');}
+  catch(e){return{restaurants:[],lists:[]};}
+}
+function saveData(d){
+  try{localStorage.setItem('lifetracker_v1_restaurants',JSON.stringify(d));}
+  catch(e){showToast('Storage full!');}
+}
+function allLists(data){return[...DEFAULT_LISTS.slice(1),...(data.lists||[])];}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ════════════════════════════════════════════════
+//  VIEW SWITCHING
+// ════════════════════════════════════════════════
+function setView(v){
+  currentView=v;
+  ['list','map','ranking','stats'].forEach(n=>{
+    const t=document.getElementById('tab-'+n);
+    if(t)t.classList.toggle('active',n===v);
+  });
+  document.getElementById('viewList').style.display    =v==='list'   ?'':'none';
+  document.getElementById('mapView').style.display     =v==='map'    ?'':'none';
+  document.getElementById('viewRanking').style.display =v==='ranking'?'':'none';
+  document.getElementById('viewStats').style.display   =v==='stats'  ?'':'none';
+  document.getElementById('fabBtn').style.display      =v==='map'    ?'none':'flex';
+  if(v==='map')    initMap();
+  if(v==='ranking')renderRanking();
+  if(v==='stats')  renderStats();
+}
+
+// ════════════════════════════════════════════════
+//  LIST VIEW
+// ════════════════════════════════════════════════
+function renderListChips(){
+  const data=getData();
+  document.getElementById('listChips').innerHTML=
+    ['All',...allLists(data)].map(l=>`<div class="chip${l===selectedList?' active':''}" onclick="selectList('${l.replace(/'/g,"\\'")}'">${escHtml(l)}</div>`).join('')+
+    '<div class="chip" onclick="openManageLists()" style="color:var(--text-muted)">+ List</div>';
+}
+function selectList(l){selectedList=l;renderListChips();renderList();}
+function toggleFilters(){
+  document.getElementById('filterPanel').classList.toggle('open');
+  document.getElementById('filterToggle').classList.toggle('active');
+}
+
+function getSortedRankedPool(restaurants){
+  return (restaurants||[])
+    .filter(r=>VISITED_STATUSES.includes(r.status)&&r.eloRanked)
+    .sort((a,b)=>(b.eloRating||ELO_DEFAULT)-(a.eloRating||ELO_DEFAULT));
+}
+
+function renderList(){
+  const data=getData();
+  let items=data.restaurants||[];
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const cuisine=document.getElementById('filterCuisine').value.toLowerCase();
+  const city=document.getElementById('filterCity').value.toLowerCase();
+  const minRat=parseFloat(document.getElementById('filterMinRating').value)||0;
+  const sort=document.getElementById('sortSelect').value;
+
+  if(q)       items=items.filter(r=>(r.name+' '+(r.cuisine||'')+' '+(r.neighborhood||'')+' '+(r.notes||'')).toLowerCase().includes(q));
+  if(cuisine) items=items.filter(r=>(r.cuisine||'').toLowerCase().includes(cuisine));
+  if(city)    items=items.filter(r=>(r.neighborhood||'').toLowerCase().includes(city));
+  if(minRat)  items=items.filter(r=>(r.rating||0)>=minRat);
+  if     (selectedList==='Favorites') items=items.filter(r=>r.status==='Favorite');
+  else if(selectedList==='Want to Go')items=items.filter(r=>r.status==='Want to Go');
+  else if(selectedList==='Visited')   items=items.filter(r=>r.status==='Visited'||r.status==='Favorite');
+  else if(selectedList!=='All')       items=items.filter(r=>(r.lists||[]).includes(selectedList));
+
+  const sortedPool=getSortedRankedPool(data.restaurants);
+  if     (sort==='elo')   items=[...items].sort((a,b)=>(b.eloRating||0)-(a.eloRating||0));
+  else if(sort==='rating')items=[...items].sort((a,b)=>(b.rating||0)-(a.rating||0));
+  else if(sort==='alpha') items=[...items].sort((a,b)=>a.name.localeCompare(b.name));
+  else                    items=[...items].sort((a,b)=>(b.dateAdded||'').localeCompare(a.dateAdded||''));
+
+  const el=document.getElementById('restaurantList');
+  if(!items.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">🍽️</div><div class="empty-text">${data.restaurants.length?'No matches found.':'No nommies yet.<br>Tap + to add your first one.'}</div></div>`;
+    return;
   }
-  function saveData(d) {
-    try { localStorage.setItem('lifetracker_v1_restaurants', JSON.stringify(d)); }
-    catch(e) { showToast('Storage full!'); }
-  }
-  function allLists(data) { return [...DEFAULT_LISTS.slice(1), ...(data.lists||[])]; }
 
-  function setView(v) {
-    currentView = v;
-    document.getElementById('viewList').style.display = v==='list'?'':'none';
-    document.getElementById('viewStats').style.display = v==='stats'?'':'none';
-    document.getElementById('fabBtn').style.display = v==='list'?'flex':'none';
-    if (v==='stats') renderStats();
-  }
+  el.innerHTML=items.map(r=>{
+    const sk=(r.status||'Visited').replace(' to Go','');
+    const date=r.dateAdded?new Date(r.dateAdded).toLocaleDateString('en-US',{month:'short',year:'numeric'}):'';
+    const mapsLink=r.url?`<a class="r-maps-link" href="${escHtml(r.url)}" target="_blank" onclick="event.stopPropagation()">🗺 Maps</a>`:'';
+    const isVisited=VISITED_STATUSES.includes(r.status);
 
-  function renderListChips() {
-    const data = getData();
-    const lists = ['All', ...allLists(data)];
-    document.getElementById('listChips').innerHTML = lists.map(l =>
-      `<div class="chip${l===selectedList?' active':''}" onclick="selectList('${l}')">${l}</div>`
-    ).join('') + `<div class="chip" onclick="openManageLists()" style="color:var(--text-muted)">+ List</div>`;
-  }
-
-  function selectList(l) {
-    selectedList = l;
-    renderListChips();
-    renderList();
-  }
-
-  function toggleFilters() {
-    const panel = document.getElementById('filterPanel');
-    const btn = document.getElementById('filterToggle');
-    panel.classList.toggle('open');
-    btn.classList.toggle('active');
-  }
-
-  function renderList() {
-    const data = getData();
-    let items = data.restaurants || [];
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    const cuisine = (document.getElementById('filterCuisine').value||'').toLowerCase();
-    const city = (document.getElementById('filterCity').value||'').toLowerCase();
-    const minRating = parseFloat(document.getElementById('filterMinRating').value)||0;
-    const sort = document.getElementById('sortSelect').value;
-
-    if (q) items = items.filter(r => r.name.toLowerCase().includes(q) || (r.cuisine||'').toLowerCase().includes(q) || (r.neighborhood||'').toLowerCase().includes(q));
-    if (cuisine) items = items.filter(r => (r.cuisine||'').toLowerCase().includes(cuisine));
-    if (city) items = items.filter(r => (r.neighborhood||'').toLowerCase().includes(city));
-    if (minRating) items = items.filter(r => (r.rating||0) >= minRating);
-
-    if (selectedList === 'Favorites') items = items.filter(r => r.status === 'Favorite');
-    else if (selectedList === 'Want to Go') items = items.filter(r => r.status === 'Want to Go');
-    else if (selectedList === 'Visited') items = items.filter(r => r.status === 'Visited');
-    else if (selectedList !== 'All') items = items.filter(r => (r.lists||[]).includes(selectedList));
-
-    if (sort==='rating') items = [...items].sort((a,b) => (b.rating||0)-(a.rating||0));
-    else if (sort==='alpha') items = [...items].sort((a,b) => a.name.localeCompare(b.name));
-    else items = [...items].sort((a,b) => b.dateAdded?.localeCompare(a.dateAdded||'')||0);
-
-    const el = document.getElementById('restaurantList');
-    if (!items.length) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">🍽️</div><div class="empty-text">${data.restaurants.length?'No matches found.':'No restaurants yet.<br>Tap + to add your first one.'}</div></div>`;
-      return;
+    // Rank badge
+    let rankBadge='';
+    if(isVisited&&r.eloRanked){
+      const ri=sortedPool.findIndex(x=>x.id===r.id);
+      if(ri>=0){
+        const n=ri+1;
+        rankBadge=`<div class="r-elo-rank${n<=3?' top3':''}">#${n}</div>`;
+      }
     }
-    el.innerHTML = items.map(r => `
-      <div class="restaurant-card" onclick="openEditModal('${r.id}')">
+
+    // Action buttons (right column)
+    const needsRank=isVisited&&r.imported&&!r.eloRanked;
+    const needsLoc=isVisited&&!r.lat;
+    const actions=`<div class="r-actions">
+      ${needsRank?`<button class="r-rank-btn" onclick="startEloGame('${r.id}')" title="Rank this">⚡</button>`:''}
+      ${needsLoc?`<button class="r-loc-btn" onclick="geocodeOne('${r.id}',this)" title="Add to map">📍</button>`:''}
+      <button class="r-del-btn" onclick="quickDelete('${r.id}')" title="Delete">✕</button>
+    </div>`;
+
+    return`<div class="restaurant-card">
+      <div class="r-body" onclick="openEditModal('${r.id}')">
         <div class="r-header">
-          <div class="r-name">${r.name}</div>
-          ${r.rating ? `<div class="r-rating">${r.rating}</div>` : ''}
+          <div class="r-name">${escHtml(r.name)}</div>
+          <div class="r-badges">${rankBadge}${r.rating?`<div class="r-rating">${r.rating}</div>`:''}</div>
         </div>
         <div class="r-meta">
-          ${r.cuisine ? `<span>🍴 ${r.cuisine}</span>` : ''}
-          ${r.neighborhood ? `<span>📍 ${r.neighborhood}</span>` : ''}
-          ${r.dateAdded ? `<span>📅 ${new Date(r.dateAdded).toLocaleDateString('en-US',{month:'short',year:'numeric'})}</span>` : ''}
+          ${r.cuisine?`<span>🍴 ${escHtml(r.cuisine)}</span>`:''}
+          ${r.neighborhood?`<span>📍 ${escHtml(r.neighborhood)}</span>`:''}
+          ${date?`<span>📅 ${date}</span>`:''}
+          ${mapsLink}
         </div>
-        <div class="r-status status-${r.status?.replace(' to Go','')||'Visited'}">${r.status||'Visited'}</div>
-        ${r.notes ? `<div class="r-notes">${r.notes.slice(0,100)}${r.notes.length>100?'…':''}</div>` : ''}
+        <div class="r-status status-${sk}">${r.status||'Visited'}</div>
+        ${r.notes?`<div class="r-notes">${escHtml(r.notes.slice(0,130))}${r.notes.length>130?'…':''}</div>`:''}
       </div>
-    `).join('');
-  }
+      ${actions}
+    </div>`;
+  }).join('');
+  if(window.lucide)lucide.createIcons();
+}
 
-  function renderStats() {
-    const data = getData();
-    const items = data.restaurants || [];
-    const visited = items.filter(r => r.status === 'Visited' || r.status === 'Favorite');
-    const avg = visited.length ? (visited.filter(r=>r.rating).reduce((s,r)=>s+(r.rating||0),0)/(visited.filter(r=>r.rating).length||1)).toFixed(1) : '—';
+function quickDelete(id){
+  const data=getData(),r=data.restaurants.find(x=>x.id===id);
+  if(!r||!confirm(`Delete "${r.name}"?`))return;
+  data.restaurants=data.restaurants.filter(x=>x.id!==id);
+  saveData(data);renderList();renderListChips();showToast('Deleted');
+}
 
-    const cuisineCounts = {};
-    items.forEach(r => { if (r.cuisine) cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine]||0)+1; });
-    const topCuisines = Object.entries(cuisineCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+// ════════════════════════════════════════════════
+//  MAP VIEW — Leaflet + Nominatim geocoding
+// ════════════════════════════════════════════════
+function initMap(){
+  const data=getData();
+  const located=(data.restaurants||[]).filter(r=>r.lat&&r.lng);
 
-    const cityCounts = {};
-    items.forEach(r => { if (r.neighborhood) { const c = r.neighborhood.split(',').pop().trim(); cityCounts[c] = (cityCounts[c]||0)+1; } });
-
-    document.getElementById('viewStats').innerHTML = `
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-val">${items.length}</div><div class="stat-lbl">Total tracked</div></div>
-        <div class="stat-card"><div class="stat-val">${avg}</div><div class="stat-lbl">Avg rating</div></div>
-        <div class="stat-card"><div class="stat-val">${visited.length}</div><div class="stat-lbl">Visited</div></div>
-        <div class="stat-card"><div class="stat-val">${items.filter(r=>r.status==='Want to Go').length}</div><div class="stat-lbl">Want to go</div></div>
-        <div class="stat-card wide">
-          <div class="stat-lbl" style="margin-bottom:10px">Top cuisines</div>
-          ${topCuisines.length ? topCuisines.map(([c,n])=>`
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px">
-              <span>${c}</span><span style="font-weight:600;color:var(--accent)">${n}</span>
-            </div>`).join('') : '<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}
-        </div>
-        <div class="stat-card wide">
-          <div class="stat-lbl" style="margin-bottom:10px">Cities</div>
-          ${Object.entries(cityCounts).length ? Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([c,n])=>`
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px">
-              <span>${c}</span><span style="font-weight:600;color:var(--accent)">${n}</span>
-            </div>`).join('') : '<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}
-        </div>
-      </div>
-      <button onclick="setView('list')" style="width:100%;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:15px;cursor:pointer;color:var(--text)">← Back to list</button>
-    `;
-  }
-
-  function openAddModal() {
-    const data = getData();
-    document.getElementById('editId').value = '';
-    document.getElementById('modalTitle').textContent = 'New Restaurant';
-    document.getElementById('rName').value = '';
-    document.getElementById('rCuisine').value = '';
-    document.getElementById('rNeighborhood').value = '';
-    document.getElementById('rStatus').value = 'Visited';
-    document.getElementById('rNotes').value = '';
-    document.getElementById('deleteBtn').style.display = 'none';
-    selectedRating = 0;
-    updateRatingBtns();
-    populateListSelect(data, '');
-    document.getElementById('restaurantOverlay').classList.add('open');
-  }
-
-  function openEditModal(id) {
-    const data = getData();
-    const r = data.restaurants.find(x=>x.id===id);
-    if (!r) return;
-    document.getElementById('editId').value = id;
-    document.getElementById('modalTitle').textContent = 'Edit Restaurant';
-    document.getElementById('rName').value = r.name;
-    document.getElementById('rCuisine').value = r.cuisine||'';
-    document.getElementById('rNeighborhood').value = r.neighborhood||'';
-    document.getElementById('rStatus').value = r.status||'Visited';
-    document.getElementById('rNotes').value = r.notes||'';
-    document.getElementById('deleteBtn').style.display = 'block';
-    selectedRating = r.rating||0;
-    updateRatingBtns();
-    populateListSelect(data, r.lists?.[0]||'');
-    document.getElementById('restaurantOverlay').classList.add('open');
-  }
-
-  function populateListSelect(data, current) {
-    const lists = allLists(data).filter(l=>!['Visited','Want to Go','Favorites'].includes(l));
-    const el = document.getElementById('rList');
-    el.innerHTML = `<option value="">None</option>` + lists.map(l=>`<option value="${l}"${l===current?' selected':''}>${l}</option>`).join('');
-  }
-
-  function setRating(n) { selectedRating = n; updateRatingBtns(); }
-  function updateRatingBtns() {
-    document.querySelectorAll('.rating-btn').forEach(b => {
-      const v = b.textContent === '—' ? 0 : parseInt(b.textContent);
-      b.classList.toggle('active', v === selectedRating);
-    });
-  }
-
-  function saveRestaurant() {
-    const name = document.getElementById('rName').value.trim();
-    if (!name) { showToast('Please enter a name'); return; }
-    const data = getData();
-    const editId = document.getElementById('editId').value;
-    const id = editId || Date.now().toString(36);
-    const listVal = document.getElementById('rList').value;
-    const r = {
-      id, name,
-      cuisine: document.getElementById('rCuisine').value.trim(),
-      neighborhood: document.getElementById('rNeighborhood').value.trim(),
-      status: document.getElementById('rStatus').value,
-      rating: selectedRating || null,
-      notes: document.getElementById('rNotes').value.trim(),
-      lists: listVal ? [listVal] : [],
-      dateAdded: editId ? (data.restaurants.find(x=>x.id===editId)?.dateAdded||new Date().toISOString()) : new Date().toISOString()
-    };
-    if (editId) {
-      const idx = data.restaurants.findIndex(x=>x.id===editId);
-      if (idx>=0) data.restaurants[idx]=r;
-    } else {
-      data.restaurants.push(r);
+  if(!mapInstance){
+    let clat=37.7749,clng=-122.4194;
+    if(located.length){
+      clat=located.reduce((s,r)=>s+r.lat,0)/located.length;
+      clng=located.reduce((s,r)=>s+r.lng,0)/located.length;
     }
-    saveData(data);
-    document.getElementById('restaurantOverlay').classList.remove('open');
-    showToast(editId?'Updated!':'Restaurant added!');
-    renderList();
-    renderListChips();
+    mapInstance=L.map('map',{zoomControl:true}).setView([clat,clng],12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      maxZoom:19
+    }).addTo(mapInstance);
   }
 
-  function deleteRestaurant() {
-    const id = document.getElementById('editId').value;
-    if (!id||!confirm('Delete this restaurant?')) return;
-    const data = getData();
-    data.restaurants = data.restaurants.filter(r=>r.id!==id);
-    saveData(data);
-    document.getElementById('restaurantOverlay').classList.remove('open');
-    showToast('Deleted');
-    renderList();
-    renderListChips();
+  mapMarkers.forEach(m=>m.remove());
+  mapMarkers=[];
+
+  const sortedPool=getSortedRankedPool(data.restaurants);
+
+  located.forEach(r=>{
+    const isVisited=VISITED_STATUSES.includes(r.status);
+    const color=isVisited?'#C4714A':'#6B8CAE';
+    const dark=isVisited?'#8B4520':'#3A5A7A';
+
+    const icon=L.divIcon({
+      html:`<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13 1C6.9 1 2 5.9 2 12c0 8.5 11 21 11 21S24 20.5 24 12C24 5.9 19.1 1 13 1z"
+          fill="${color}" stroke="${dark}" stroke-width="1.5"/>
+        <circle cx="13" cy="12" r="5.5" fill="white" opacity="0.92"/>
+      </svg>`,
+      className:'',iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-36]
+    });
+
+    const ri=sortedPool.findIndex(x=>x.id===r.id);
+    const rankStr=(isVisited&&r.eloRanked&&ri>=0)?`<span style="font-weight:700;color:#C4714A">#${ri+1}</span> · `:'';
+    const statColor=r.status==='Favorite'?'#E65100':isVisited?'#2E7D32':'#C4714A';
+    const statBg=r.status==='Favorite'?'#FFF3E0':isVisited?'#E8F5E9':'#F5E8E0';
+
+    const popup=`<div class="map-popup">
+      <div class="map-popup-name">${escHtml(r.name)}</div>
+      <div class="map-popup-meta">${rankStr}${escHtml([r.cuisine,r.neighborhood].filter(Boolean).join(' · '))}</div>
+      <div class="map-popup-badges">
+        <span style="background:${statBg};color:${statColor};padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700">${r.status||'Visited'}</span>
+        ${r.rating?`<span style="background:#C4714A;color:#fff;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700">${r.rating}/10</span>`:''}
+        ${(isVisited&&r.eloRanked&&ri>=0)?`<span style="background:#1A1A1A;color:#fff;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700">#${ri+1}</span>`:''}
+      </div>
+      ${r.notes?`<div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.4">${escHtml(r.notes.slice(0,80))}${r.notes.length>80?'…':''}</div>`:''}
+      <button class="map-popup-edit" onclick="openEditModal('${r.id}')">Edit</button>
+    </div>`;
+
+    const marker=L.marker([r.lat,r.lng],{icon})
+      .bindPopup(popup,{maxWidth:240})
+      .addTo(mapInstance);
+    mapMarkers.push(marker);
+  });
+
+  setTimeout(()=>mapInstance.invalidateSize(),120);
+  renderUnlocated(data);
+}
+
+function renderUnlocated(data){
+  const unlocated=(data.restaurants||[]).filter(r=>VISITED_STATUSES.includes(r.status)&&!r.lat);
+  const el=document.getElementById('mapUnlocated');
+  if(!unlocated.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="map-unlocated">
+    <div class="map-unlocated-title">Missing location (${unlocated.length})</div>
+    ${unlocated.map(r=>`
+      <div class="unlocated-item">
+        <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.name)}${r.neighborhood?`<span style="color:var(--text-muted);font-size:12px"> · ${escHtml(r.neighborhood)}</span>`:''}</span>
+        <button class="locate-btn" onclick="geocodeOne('${r.id}',this)">📍 Locate</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+async function geocodeOne(id,btn){
+  const data=getData(),r=data.restaurants.find(x=>x.id===id);
+  if(!r)return;
+  if(btn){btn.textContent='…';btn.disabled=true;}
+  const q=[r.name,r.neighborhood,'restaurant'].filter(Boolean).join(' ');
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
+      {headers:{'Accept-Language':'en','User-Agent':'LifeTracker/1.0'}});
+    const results=await res.json();
+    if(results.length){
+      const fresh=getData();
+      const idx=fresh.restaurants.findIndex(x=>x.id===id);
+      if(idx>=0){
+        fresh.restaurants[idx].lat=parseFloat(results[0].lat);
+        fresh.restaurants[idx].lng=parseFloat(results[0].lon);
+        saveData(fresh);
+      }
+      showToast(`📍 Located ${r.name}`);
+      if(currentView==='map')initMap();
+      else renderList();
+    } else {
+      showToast('Location not found — try adding a city to the neighborhood field');
+      if(btn){btn.textContent='📍 Locate';btn.disabled=false;}
+    }
+  }catch(e){
+    showToast('Geocode failed — check your connection');
+    if(btn){btn.textContent='📍 Locate';btn.disabled=false;}
+  }
+}
+
+async function geocodeBackground(id){
+  const data=getData(),r=data.restaurants.find(x=>x.id===id);
+  if(!r||r.lat)return;
+  const q=[r.name,r.neighborhood,'restaurant'].filter(Boolean).join(' ');
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
+      {headers:{'Accept-Language':'en','User-Agent':'LifeTracker/1.0'}});
+    const results=await res.json();
+    if(results.length){
+      const fresh=getData();
+      const idx=fresh.restaurants.findIndex(x=>x.id===id);
+      if(idx>=0){fresh.restaurants[idx].lat=parseFloat(results[0].lat);fresh.restaurants[idx].lng=parseFloat(results[0].lon);saveData(fresh);}
+    }
+  }catch(e){/* silent */}
+}
+
+// ════════════════════════════════════════════════
+//  RANKING VIEW
+// ════════════════════════════════════════════════
+function tierOf(rank,total){
+  const p=rank/total;
+  if(p<=0.05)return{l:'S',bg:'#FFD700',c:'#5A3A00'};
+  if(p<=0.20)return{l:'A',bg:'#4CAF50',c:'#fff'};
+  if(p<=0.45)return{l:'B',bg:'#2196F3',c:'#fff'};
+  if(p<=0.70)return{l:'C',bg:'#9C27B0',c:'#fff'};
+  return           {l:'D',bg:'#9E9E9E',c:'#fff'};
+}
+
+function renderRanking(){
+  const data=getData();
+  const pool=(data.restaurants||[])
+    .filter(r=>VISITED_STATUSES.includes(r.status)&&r.eloRanked)
+    .sort((a,b)=>(b.eloRating||ELO_DEFAULT)-(a.eloRating||ELO_DEFAULT));
+  const unranked=(data.restaurants||[]).filter(r=>VISITED_STATUSES.includes(r.status)&&!r.eloRanked);
+  const el=document.getElementById('rankingList');
+
+  if(!pool.length&&!unranked.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">⚡</div><div class="empty-text">No ranked nommies yet.<br>Add a visited nommie to begin.</div></div>`;
+    return;
   }
 
-  function openManageLists() {
-    renderCustomListsList();
-    document.getElementById('listOverlay').classList.add('open');
+  let html='';
+  if(pool.length){
+    html+=pool.map((r,i)=>{
+      const n=i+1,tier=tierOf(n,pool.length);
+      return`<div class="rank-row" onclick="openEditModal('${r.id}')">
+        <div class="rank-num">${n}</div>
+        <div class="rank-info">
+          <div class="rank-name">${escHtml(r.name)}</div>
+          <div class="rank-meta">
+            ${r.cuisine?`🍴 ${escHtml(r.cuisine)} · `:''}
+            Elo ${Math.round(r.eloRating||ELO_DEFAULT)} · ${r.eloGames||0} matches
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+          <span style="background:${tier.bg};color:${tier.c};padding:3px 10px;border-radius:6px;font-size:12px;font-weight:800">${tier.l}</span>
+          ${r.rating?`<span class="r-rating" style="font-size:12px">${r.rating}</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if(unranked.length){
+    html+=`<div style="padding:16px 4px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">Unranked (${unranked.length})</div>`;
+    html+=unranked.map(r=>`<div class="rank-row" style="opacity:.65">
+      <div class="rank-num" style="font-size:16px;color:var(--text-muted)">—</div>
+      <div class="rank-info" onclick="openEditModal('${r.id}')">
+        <div class="rank-name">${escHtml(r.name)}</div>
+        <div class="rank-meta">${r.cuisine?`🍴 ${escHtml(r.cuisine)}`:'No cuisine set'}</div>
+      </div>
+      <button class="r-rank-btn" onclick="startEloGame('${r.id}')" title="Rank this">⚡</button>
+    </div>`).join('');
+  }
+  el.innerHTML=html;
+}
+
+// ════════════════════════════════════════════════
+//  STATS VIEW
+// ════════════════════════════════════════════════
+function renderStats(){
+  const data=getData(),items=data.restaurants||[];
+  const visited=items.filter(r=>r.status==='Visited'||r.status==='Favorite');
+  const rated=visited.filter(r=>r.rating);
+  const avg=rated.length?(rated.reduce((s,r)=>s+(r.rating||0),0)/rated.length).toFixed(1):'—';
+  const cuis={},cities={};
+  items.forEach(r=>{if(r.cuisine)cuis[r.cuisine]=(cuis[r.cuisine]||0)+1;});
+  items.forEach(r=>{if(r.neighborhood){const c=r.neighborhood.split(',').pop().trim();cities[c]=(cities[c]||0)+1;}});
+  const topC=Object.entries(cuis).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topCi=Object.entries(cities).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const row=([n,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px"><span>${escHtml(n)}</span><span style="font-weight:600;color:var(--accent)">${v}</span></div>`;
+  const rankedCount=items.filter(r=>VISITED_STATUSES.includes(r.status)&&r.eloRanked).length;
+  document.getElementById('viewStats').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val">${items.length}</div><div class="stat-lbl">Total tracked</div></div>
+      <div class="stat-card"><div class="stat-val">${avg}</div><div class="stat-lbl">Avg rating</div></div>
+      <div class="stat-card"><div class="stat-val">${visited.length}</div><div class="stat-lbl">Visited</div></div>
+      <div class="stat-card"><div class="stat-val">${items.filter(r=>r.status==='Want to Go').length}</div><div class="stat-lbl">Want to go</div></div>
+      <div class="stat-card"><div class="stat-val">${rankedCount}</div><div class="stat-lbl">Elo ranked</div></div>
+      <div class="stat-card"><div class="stat-val">${items.filter(r=>r.lat).length}</div><div class="stat-lbl">On map</div></div>
+      <div class="stat-card wide"><div class="stat-lbl" style="margin-bottom:10px">Top cuisines</div>${topC.length?topC.map(row).join(''):'<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}</div>
+      <div class="stat-card wide"><div class="stat-lbl" style="margin-bottom:10px">Cities</div>${topCi.length?topCi.map(row).join(''):'<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}</div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════
+//  ADD / EDIT MODAL
+// ════════════════════════════════════════════════
+function openAddModal(){
+  const data=getData();
+  ['editId','rName','rCuisine','rNeighborhood','rNotes','rUrl'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modalTitle').textContent="New Nommie";
+  document.getElementById('rStatus').value='Visited';
+  document.getElementById('deleteBtn').style.display='none';
+  selectedRating=0;updateRatingBtns();populateListSelect(data,'');
+  document.getElementById('restaurantOverlay').classList.add('open');
+  if(window.lucide)lucide.createIcons();
+}
+function openEditModal(id){
+  // Close map popup if open
+  if(mapInstance)mapInstance.closePopup();
+  const data=getData(),r=data.restaurants.find(x=>x.id===id);
+  if(!r)return;
+  document.getElementById('editId').value=id;
+  document.getElementById('modalTitle').textContent='Edit Nommie';
+  document.getElementById('rName').value=r.name;
+  document.getElementById('rCuisine').value=r.cuisine||'';
+  document.getElementById('rNeighborhood').value=r.neighborhood||'';
+  document.getElementById('rStatus').value=r.status||'Visited';
+  document.getElementById('rNotes').value=r.notes||'';
+  document.getElementById('rUrl').value=r.url||'';
+  document.getElementById('deleteBtn').style.display='block';
+  selectedRating=r.rating||0;updateRatingBtns();populateListSelect(data,r.lists?.[0]||'');
+  document.getElementById('restaurantOverlay').classList.add('open');
+  if(window.lucide)lucide.createIcons();
+}
+function populateListSelect(data,current){
+  const lists=allLists(data).filter(l=>!['Visited','Want to Go','Favorites'].includes(l));
+  document.getElementById('rList').innerHTML='<option value="">None</option>'+lists.map(l=>`<option value="${escHtml(l)}"${l===current?' selected':''}>${escHtml(l)}</option>`).join('');
+}
+function setRating(n){selectedRating=n;updateRatingBtns();}
+function updateRatingBtns(){
+  document.querySelectorAll('.rating-btn').forEach(b=>{
+    const v=b.textContent==='—'?0:parseInt(b.textContent);
+    b.classList.toggle('active',v===selectedRating);
+  });
+}
+function saveRestaurant(){
+  const name=document.getElementById('rName').value.trim();
+  if(!name){showToast('Please enter a name');return;}
+  const data=getData(),editId=document.getElementById('editId').value;
+  const id=editId||Date.now().toString(36)+Math.random().toString(36).slice(2);
+  const listVal=document.getElementById('rList').value;
+  const prevR=editId?data.restaurants.find(x=>x.id===editId):null;
+  const newStatus=document.getElementById('rStatus').value;
+  const isNew=!editId;
+  const becameVisited=prevR&&!VISITED_STATUSES.includes(prevR.status)&&VISITED_STATUSES.includes(newStatus);
+
+  // Seed Elo from rating: rating 5 → 1200, 10 → 1700, 1 → 700
+  const seedElo=selectedRating?700+(selectedRating*100):ELO_DEFAULT;
+
+  const r={
+    id,name,
+    cuisine:     document.getElementById('rCuisine').value.trim(),
+    neighborhood:document.getElementById('rNeighborhood').value.trim(),
+    status:      newStatus,
+    rating:      selectedRating||null,
+    notes:       document.getElementById('rNotes').value.trim(),
+    url:         document.getElementById('rUrl').value.trim(),
+    lists:       listVal?[listVal]:[],
+    dateAdded:   editId?(prevR?.dateAdded||new Date().toISOString()):new Date().toISOString(),
+    lat:         prevR?.lat||null,
+    lng:         prevR?.lng||null,
+    eloRating:   prevR?.eloRating||seedElo,
+    eloGames:    prevR?.eloGames||0,
+    eloRanked:   prevR?.eloRanked||false,
+    imported:    prevR?.imported||false
+  };
+
+  if(editId){const i=data.restaurants.findIndex(x=>x.id===editId);if(i>=0)data.restaurants[i]=r;}
+  else data.restaurants.push(r);
+  saveData(data);
+  document.getElementById('restaurantOverlay').classList.remove('open');
+  showToast(editId?'Updated!':'Nommie added!');
+  renderList();renderListChips();
+
+  // Trigger Elo automatically for new manual visited entries, or entries that just became visited
+  const isManualVisited=VISITED_STATUSES.includes(newStatus)&&!r.imported&&(isNew||becameVisited);
+  if(isManualVisited){
+    geocodeBackground(r.id);
+    setTimeout(()=>startEloGame(r.id),400);
+  } else if(isNew&&VISITED_STATUSES.includes(newStatus)){
+    geocodeBackground(r.id);
+  }
+}
+function deleteRestaurant(){
+  const id=document.getElementById('editId').value;
+  if(!id||!confirm('Delete this nommie?'))return;
+  const data=getData();
+  data.restaurants=data.restaurants.filter(r=>r.id!==id);
+  saveData(data);
+  document.getElementById('restaurantOverlay').classList.remove('open');
+  showToast('Deleted');renderList();renderListChips();
+}
+
+// ════════════════════════════════════════════════
+//  ELO RANKING GAME
+// ════════════════════════════════════════════════
+// Algorithm: binary search over ranked pool (sorted by Elo, best first).
+// lo/hi = current search window (indices).
+// Each comparison: pick midpoint, user says better/worse/same.
+//   better → hi = mid-1 (new entry belongs in the better half)
+//   worse  → lo = mid+1
+//   same   → stop, insert next to this challenger
+// Terminates: window ≤ 1, "same" chosen, or maxComparisons exhausted.
+// Elo scores updated for each pairing with K=32.
+
+function startEloGame(newId){
+  const data=getData(),newR=data.restaurants.find(x=>x.id===newId);
+  if(!newR)return;
+
+  const pool=(data.restaurants||[])
+    .filter(r=>VISITED_STATUSES.includes(r.status)&&r.eloRanked&&r.id!==newId)
+    .sort((a,b)=>(b.eloRating||ELO_DEFAULT)-(a.eloRating||ELO_DEFAULT));
+
+  if(pool.length===0){
+    // First entry — mark ranked immediately, show a quick result
+    const fresh=getData();
+    const idx=fresh.restaurants.findIndex(x=>x.id===newId);
+    if(idx>=0){fresh.restaurants[idx].eloRanked=true;fresh.restaurants[idx].imported=false;}
+    saveData(fresh);
+    showToast('🏆 First ranked nommie!');
+    if(currentView==='ranking')renderRanking();
+    else renderList();
+    return;
   }
 
-  function renderCustomListsList() {
-    const data = getData();
-    const el = document.getElementById('customListsList');
-    const lists = data.lists||[];
-    if (!lists.length) { el.innerHTML=`<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:16px">No custom lists</div>`; return; }
-    el.innerHTML = lists.map(l=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:15px">${l}</span>
-        <button onclick="removeList('${l}')" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text-muted)">Remove</button>
-      </div>`).join('');
+  eloState={
+    newId,
+    pool,                                // sorted best→worst
+    lo:0,
+    hi:pool.length-1,
+    comparisons:[],                      // [{challengerId, outcome}]
+    maxComparisons:Math.min(7,Math.ceil(Math.log2(pool.length))+2)
+  };
+  renderEloStep();
+  document.getElementById('eloOverlay').classList.add('open');
+}
+
+function renderEloStep(){
+  const data=getData();
+  const newR=data.restaurants.find(x=>x.id===eloState.newId);
+  const windowSize=eloState.hi-eloState.lo+1;
+  const done=eloState.comparisons.length>=eloState.maxComparisons||windowSize<=1;
+  if(done){finishEloGame();return;}
+
+  const midIdx=Math.floor((eloState.lo+eloState.hi)/2);
+  const chall=eloState.pool[midIdx];
+  const challRank=midIdx+1;
+  const tier=tierOf(challRank,eloState.pool.length+1);
+  const total=eloState.maxComparisons;
+  const done_=eloState.comparisons.length;
+
+  const pips=Array.from({length:total},(_,i)=>
+    `<div class="elo-pip${i<done_?' done':i===done_?' active':''}"></div>`).join('');
+
+  document.getElementById('eloModal').innerHTML=`
+    <div class="elo-header">
+      <div class="elo-title">How does it compare?</div>
+      <div class="elo-subtitle">Round ${done_+1} of up to ${total}</div>
+    </div>
+    <div class="elo-progress">${pips}</div>
+
+    <div class="elo-new-card">
+      <div class="elo-new-label">✦ New entry</div>
+      <div class="elo-new-name">${escHtml(newR.name)}</div>
+      <div class="elo-new-meta">${escHtml([newR.cuisine,newR.neighborhood].filter(Boolean).join(' · '))||'&nbsp;'}</div>
+    </div>
+
+    <div class="elo-vs">vs</div>
+
+    <div class="elo-chal-card">
+      <div class="elo-chal-label">Currently ranked #${challRank}</div>
+      <div class="elo-chal-name">${escHtml(chall.name)}</div>
+      <div class="elo-chal-meta">${escHtml([chall.cuisine,chall.neighborhood].filter(Boolean).join(' · '))||'&nbsp;'}</div>
+      <div class="elo-chal-badges">
+        <span style="background:${tier.bg};color:${tier.c};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:800">${tier.l}-tier</span>
+        ${chall.rating?`<span style="background:#C4714A;color:#fff;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700">${chall.rating}/10</span>`:''}
+        <span style="color:var(--text-muted);font-size:11px">Elo ${Math.round(chall.eloRating||ELO_DEFAULT)}</span>
+      </div>
+    </div>
+
+    <div class="elo-btns">
+      <button class="elo-btn better" onclick="eloChoose('better')">
+        <span class="elo-btn-icon">⬆️</span>Better
+      </button>
+      <button class="elo-btn same" onclick="eloChoose('same')">
+        <span class="elo-btn-icon">🟰</span>Same
+      </button>
+      <button class="elo-btn worse" onclick="eloChoose('worse')">
+        <span class="elo-btn-icon">⬇️</span>Worse
+      </button>
+    </div>
+    <button class="elo-skip-btn" onclick="skipElo()">Skip — rank later</button>
+  `;
+}
+
+function eloChoose(outcome){
+  const midIdx=Math.floor((eloState.lo+eloState.hi)/2);
+  const chall=eloState.pool[midIdx];
+  eloState.comparisons.push({challengerId:chall.id,outcome});
+
+  if(outcome==='same'){
+    // Stop here — place adjacent to this challenger
+    finishEloGame();return;
   }
-
-  function addCustomList() {
-    const val = document.getElementById('newListInput').value.trim();
-    if (!val) return;
-    const data = getData();
-    if (!data.lists) data.lists=[];
-    if (data.lists.includes(val)||DEFAULT_LISTS.includes(val)) { showToast('List exists'); return; }
-    data.lists.push(val);
-    saveData(data);
-    document.getElementById('newListInput').value='';
-    renderCustomListsList();
-    renderListChips();
-    showToast('List created');
+  if(outcome==='better'){
+    eloState.hi=midIdx-1; // search upper (better) half
+  } else {
+    eloState.lo=midIdx+1; // search lower (worse) half
   }
+  eloState.lo=Math.max(0,eloState.lo);
+  eloState.hi=Math.min(eloState.pool.length-1,eloState.hi);
 
-  function removeList(l) {
-    const data = getData();
-    data.lists=(data.lists||[]).filter(x=>x!==l);
-    saveData(data);
-    renderCustomListsList();
-    renderListChips();
-    if (selectedList===l) selectList('All');
+  const windowSize=eloState.hi-eloState.lo+1;
+  if(windowSize<=1||eloState.comparisons.length>=eloState.maxComparisons){
+    finishEloGame();
+  } else {
+    renderEloStep();
   }
+}
 
-  // Import
-  function openImport() { document.getElementById('importFile').value=''; document.getElementById('importPreview').style.display='none'; document.getElementById('importOverlay').classList.add('open'); }
+function finishEloGame(){
+  const data=getData();
+  // Apply Elo score adjustments for all comparisons
+  eloState.comparisons.forEach(({challengerId,outcome})=>{
+    const ci=data.restaurants.findIndex(x=>x.id===challengerId);
+    const ni=data.restaurants.findIndex(x=>x.id===eloState.newId);
+    if(ci<0||ni<0)return;
+    const rA=data.restaurants[ni].eloRating||ELO_DEFAULT;
+    const rB=data.restaurants[ci].eloRating||ELO_DEFAULT;
+    const eA=1/(1+Math.pow(10,(rB-rA)/400));
+    const sA=outcome==='better'?1:outcome==='worse'?0:0.5;
+    data.restaurants[ni].eloRating=Math.round(rA+ELO_K*(sA-eA));
+    data.restaurants[ni].eloGames=(data.restaurants[ni].eloGames||0)+1;
+    data.restaurants[ci].eloRating=Math.round(rB+ELO_K*((1-sA)-(1-eA)));
+    data.restaurants[ci].eloGames=(data.restaurants[ci].eloGames||0)+1;
+  });
 
-  function handleImportFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target.result;
-      try {
-        if (file.name.endsWith('.csv')) {
-          importPending = parseCSV(text);
-        } else {
-          const json = JSON.parse(text);
-          if (json.restaurants) { importPending = json.restaurants; }
-          else if (Array.isArray(json)) { importPending = json.map(item => ({ name: item.Title||item.name||'Unknown', neighborhood: item.Address||item.neighborhood||'', status: 'Want to Go', dateAdded: new Date().toISOString(), id: Date.now().toString(36)+Math.random().toString(36).slice(2) })); }
-          else throw new Error('Unknown format');
-        }
-        document.getElementById('importPreviewText').innerHTML = `Found <strong>${importPending.length}</strong> restaurant${importPending.length!==1?'s':''}.<br><small style="opacity:.7">${importPending.slice(0,3).map(r=>r.name).join(', ')}${importPending.length>3?'...':''}</small>`;
-        document.getElementById('importPreview').style.display='';
-      } catch(err) { showToast('Could not parse file'); }
-    };
-    reader.readAsText(file);
+  // Mark as ranked
+  const ni=data.restaurants.findIndex(x=>x.id===eloState.newId);
+  if(ni>=0){data.restaurants[ni].eloRanked=true;data.restaurants[ni].imported=false;}
+  saveData(data);
+
+  // Compute final rank for result screen
+  const fresh=getData();
+  const sortedPool=getSortedRankedPool(fresh.restaurants);
+  const finalRank=sortedPool.findIndex(x=>x.id===eloState.newId)+1;
+  const entry=fresh.restaurants.find(x=>x.id===eloState.newId);
+  const tier=tierOf(finalRank,sortedPool.length);
+
+  document.getElementById('eloModal').innerHTML=`
+    <div class="elo-header">
+      <div class="elo-title">Ranked! ✦</div>
+      <div class="elo-subtitle">${escHtml(entry?.name||'')}</div>
+    </div>
+    <div class="elo-result">
+      <div class="elo-result-num">#${finalRank}</div>
+      <div class="elo-result-of">out of ${sortedPool.length} ranked restaurants</div>
+      <div><span class="elo-tier-badge" style="background:${tier.bg};color:${tier.c}">${tier.l}-Tier</span></div>
+      <div class="elo-result-meta">Elo rating ${Math.round(entry?.eloRating||ELO_DEFAULT)} · ${entry?.eloGames||0} comparisons played</div>
+      <button class="btn-primary" style="width:100%" onclick="closeElo()">Done</button>
+    </div>
+  `;
+
+  if(currentView==='ranking')renderRanking();
+  else renderList();
+}
+
+function skipElo(){closeElo();showToast('Skipped — tap ⚡ to rank later');}
+function closeElo(){document.getElementById('eloOverlay').classList.remove('open');eloState=null;}
+
+// ════════════════════════════════════════════════
+//  LISTS MANAGEMENT
+// ════════════════════════════════════════════════
+function openManageLists(){renderCustomListsList();document.getElementById('listOverlay').classList.add('open');}
+function renderCustomListsList(){
+  const data=getData(),lists=data.lists||[],el=document.getElementById('customListsList');
+  if(!lists.length){el.innerHTML='<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:16px">No custom lists</div>';return;}
+  el.innerHTML=lists.map(l=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:15px">${escHtml(l)}</span>
+      <button onclick="removeList('${l.replace(/'/g,"\\'")}'" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text-muted)">Remove</button>
+    </div>`).join('');
+}
+function addCustomList(){
+  const val=document.getElementById('newListInput').value.trim();if(!val)return;
+  const data=getData();if(!data.lists)data.lists=[];
+  if(data.lists.includes(val)||DEFAULT_LISTS.includes(val)){showToast('List exists');return;}
+  data.lists.push(val);saveData(data);
+  document.getElementById('newListInput').value='';
+  renderCustomListsList();renderListChips();showToast('List created');
+}
+function removeList(l){
+  const data=getData();data.lists=(data.lists||[]).filter(x=>x!==l);saveData(data);
+  renderCustomListsList();renderListChips();if(selectedList===l)selectList('All');
+}
+
+// ════════════════════════════════════════════════
+//  CSV / IMPORT / EXPORT
+// ════════════════════════════════════════════════
+function parseCSVRobust(text){
+  const rows=[];let row=[],field='',inQ=false,i=0;
+  while(i<text.length){
+    const ch=text[i];
+    if(inQ){
+      if(ch==='"'&&text[i+1]==='"'){field+='"';i+=2;continue;}
+      if(ch==='"'){inQ=false;i++;continue;}
+      field+=ch;
+    }else{
+      if(ch==='"'){inQ=true;i++;continue;}
+      if(ch===','){row.push(field);field='';i++;continue;}
+      if(ch==='\n'||(ch==='\r'&&text[i+1]==='\n')){row.push(field);field='';rows.push(row);row=[];if(ch==='\r')i++;i++;continue;}
+      field+=ch;
+    }
+    i++;
   }
+  if(field||row.length){row.push(field);rows.push(row);}
+  return rows.filter(r=>r.some(c=>c.trim()));
+}
 
-  function parseCSV(text) {
-    const lines = text.split('\n').filter(l=>l.trim());
-    const headers = lines[0].split(',').map(h=>h.trim().toLowerCase());
-    return lines.slice(1).map(line => {
-      const vals = line.split(',');
-      const obj = {};
-      headers.forEach((h,i) => obj[h] = (vals[i]||'').trim().replace(/^"|"$/g,''));
-      return { id: Date.now().toString(36)+Math.random().toString(36).slice(2), name: obj.name||obj.restaurant||'Unknown', cuisine: obj.cuisine||'', neighborhood: obj.neighborhood||obj.city||'', status: obj.status||'Visited', rating: parseFloat(obj.rating)||null, notes: obj.notes||'', dateAdded: obj.date||new Date().toISOString(), lists: [] };
-    }).filter(r=>r.name!=='Unknown'||true);
+function makeEntry(name,notes,url,idx){
+  return{
+    id:Date.now().toString(36)+(idx*9973+Math.floor(Math.random()*9999)).toString(36),
+    name:name.trim(),cuisine:'',neighborhood:'',status:'Want to Go',
+    rating:null,notes:notes.trim(),url:url.trim(),
+    lists:[],dateAdded:new Date().toISOString(),
+    lat:null,lng:null,eloRating:ELO_DEFAULT,eloGames:0,eloRanked:false,
+    imported:true
+  };
+}
+
+function parseGoogleCSV(text){
+  const rows=parseCSVRobust(text);if(!rows.length)return[];
+  const headers=rows[0].map(h=>h.trim().toLowerCase());
+  const isGoogle=headers.includes('title')&&headers.includes('url');
+  if(isGoogle){
+    const iT=headers.indexOf('title'),iN=headers.indexOf('note'),iU=headers.indexOf('url'),iC=headers.indexOf('comment');
+    return rows.slice(1).map((cols,idx)=>{
+      const name=(cols[iT]||'').trim();if(!name)return null;
+      const note=iN>=0?(cols[iN]||'').trim():'';
+      const url=iU>=0?(cols[iU]||'').trim():'';
+      const comment=iC>=0?(cols[iC]||'').trim():'';
+      return makeEntry(name,[note,comment].filter(Boolean).join(' · '),url,idx);
+    }).filter(Boolean);
   }
+  const col=(...keys)=>{for(const k of keys){const i=headers.indexOf(k);if(i>=0)return i;}return -1;};
+  const iName=col('name','restaurant','title','place');
+  const iCuis=col('cuisine','type','category'),iCity=col('neighborhood','city','location','area');
+  const iStat=col('status'),iRat=col('rating');
+  const iNote=col('notes','note','comment','description'),iURL=col('url','link','maps');
+  return rows.slice(1).map((cols,idx)=>{
+    const name=iName>=0?(cols[iName]||'').trim():'';if(!name)return null;
+    const e=makeEntry(name,iNote>=0?(cols[iNote]||'').trim():'',iURL>=0?(cols[iURL]||'').trim():'',idx);
+    if(iCuis>=0)e.cuisine=(cols[iCuis]||'').trim();
+    if(iCity>=0)e.neighborhood=(cols[iCity]||'').trim();
+    if(iStat>=0)e.status=(cols[iStat]||'Want to Go').trim();
+    if(iRat>=0)e.rating=parseFloat(cols[iRat])||null;
+    return e;
+  }).filter(Boolean);
+}
 
-  function confirmImport() {
-    if (!importPending.length) return;
-    const data = getData();
-    const existing = new Set(data.restaurants.map(r=>r.name.toLowerCase()));
-    const newItems = importPending.filter(r=>!existing.has(r.name.toLowerCase())).map(r=>({...r,id:r.id||Date.now().toString(36)+Math.random().toString(36).slice(2)}));
-    data.restaurants.push(...newItems);
-    saveData(data);
-    document.getElementById('importOverlay').classList.remove('open');
-    showToast(`Imported ${newItems.length} restaurants`);
-    renderList();
-    renderListChips();
-    importPending=[];
-  }
+function openImport(){
+  document.getElementById('importFile').value='';
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importOverlay').classList.add('open');
+}
+function handleImportFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const text=ev.target.result;
+    try{
+      if(file.name.toLowerCase().endsWith('.csv'))importPending=parseGoogleCSV(text);
+      else{
+        const json=JSON.parse(text);
+        if(json.restaurants)importPending=json.restaurants;
+        else if(Array.isArray(json))importPending=json.map((it,i)=>makeEntry(it.Title||it.name||'',it.Note||it.notes||'',it.URL||it.url||'',i));
+        else throw new Error('Unknown format');
+      }
+      importPending=importPending.filter(r=>r.name&&r.name.trim());
+      const data=getData();
+      const existing=new Set(data.restaurants.map(r=>r.name.toLowerCase().trim()));
+      const dupes=importPending.filter(r=>existing.has(r.name.toLowerCase().trim())).length;
+      const fresh=importPending.length-dupes;
+      const p3=importPending.slice(0,3).map(r=>escHtml(r.name)).join(', ');
+      const more=importPending.length>3?` +${importPending.length-3} more`:'';
+      document.getElementById('importPreviewText').innerHTML=
+        `Found <strong>${importPending.length}</strong> place${importPending.length!==1?'s':''} — `+
+        `<strong>${fresh} new</strong>${dupes?`, <span style="opacity:.7">${dupes} duplicate${dupes!==1?'s':''} (will skip)</span>`:''}.<br>`+
+        `<span style="font-size:12px;opacity:.8">${p3}${more}</span>`;
+      document.getElementById('importPreview').style.display='';
+    }catch(err){console.error(err);showToast('Could not parse file');}
+  };
+  reader.readAsText(file);
+}
+function confirmImport(){
+  if(!importPending.length)return;
+  const data=getData();
+  const existing=new Set(data.restaurants.map(r=>r.name.toLowerCase().trim()));
+  const newItems=importPending
+    .filter(r=>!existing.has(r.name.toLowerCase().trim()))
+    .map(r=>({...r,id:Date.now().toString(36)+Math.random().toString(36).slice(2),imported:true}));
+  data.restaurants.push(...newItems);
+  saveData(data);
+  document.getElementById('importOverlay').classList.remove('open');
+  showToast(`Imported ${newItems.length} place${newItems.length!==1?'s':''} — mark as Visited then tap ⚡ to rank`);
+  renderList();renderListChips();importPending=[];
+}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(getData(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='restaurants-backup.json';a.click();showToast('Exported!');
+}
 
-  function exportJSON() {
-    const data = getData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'restaurants-backup.json';
-    a.click();
-    showToast('Exported!');
-  }
+// ════════════════════════════════════════════════
+//  UTILITIES
+// ════════════════════════════════════════════════
+function closeOverlayIfOutside(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('open');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
-  function closeOverlayIfOutside(e,id) { if (e.target===document.getElementById(id)) document.getElementById(id).classList.remove('open'); }
-  function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
-
-  // Init
-  if(window.lucide) lucide.createIcons();
-  renderListChips();
-  renderList();
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+renderListChips();
+renderList();
 </script>
 </body>
 </html>

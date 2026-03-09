@@ -63,13 +63,14 @@ A gamified stats page companion to the PPL tracker, themed after Solo Leveling.
 - Floating + button quick-add, tap any card to edit, delete from edit modal
 
 ### Restaurants (`restaurants.html`)
-- Restaurant cards: name, cuisine, neighborhood, rating (1–10), status (Visited / Want to Go / Favorite), date added, notes
+- Restaurant cards: name, cuisine, neighborhood, rating (1–10), status (Visited / Want to Go / Favorite), date added, notes, and optional Google Maps URL
 - Named lists: Visited, Want to Go, Favorites (defaults), plus unlimited custom lists
-- Search bar and filter panel (cuisine, city, min rating, sort order)
+- Search bar and filter panel (cuisine, city, min rating, sort order); search also matches inside notes
 - Stats view: total tracked, average rating, top cuisines, cities breakdown
-- **Import:** Google Takeout JSON, generic JSON arrays, or CSV — with preview before confirming
+- **Import:** Google Maps saved list CSV (Title/Note/URL columns fully parsed), generic CSV, or JSON backup — with duplicate detection and preview before confirming
 - **Export:** JSON backup download
-- Tap any card to edit, delete from edit modal
+- Cards show inline 🗺 Maps link when a URL is stored; tap the card body to edit
+- **Delete:** ✕ button directly on each card for quick deletion, or via trash icon inside the edit modal
 
 ### Travel (`travel.html`)
 - Each entry: city, country, country code (for flag emoji), date visited (month/year), trip type (solo, partner, family, friends, work), rating, notes, status (Visited / Want to Go)
@@ -157,3 +158,69 @@ No configuration needed.
 - Added `← Home` back button to `fitness.html` top bar linking to `index.html`
 - Updated `← PPL` back button in `hunter-stats.html` to correctly point to `fitness.html`
 - Updated home dashboard (`index.html`) fitness stat card to read from `ppl_v3` instead of `lifetracker_v1_fitness`, now displays weekly sessions and current streak
+
+### v1.1.1 — Restaurant tracker: Google Maps CSV import fix + inline delete
+
+**Problem 1 — CSV parser broken for Google Maps exports**
+
+The original `parseCSV` function split every line on commas naively. Google Maps CSV exports include URLs in the `URL` column that contain commas inside their `data=` query parameters (e.g. `https://www.google.com/maps/place/Name/data=!4m2!3m1!1s0x...`). This caused every row to be misaligned — the URL fragment would be interpreted as extra columns, the restaurant name would be picked up correctly, but the Note field and everything after the URL would be garbage or empty.
+
+Additionally, Google's CSV uses the column names `Title`, `Note`, `URL`, `Tags`, and `Comment`, but the old parser only checked for `name`, `restaurant`, `cuisine`, `neighborhood` etc. — so even with correct parsing, nothing would have mapped to the right fields.
+
+**Fixes applied to `restaurants.html`:**
+- Replaced `parseCSV` with a full RFC 4180-compliant parser (`parseCSVRobust`) that correctly handles quoted fields containing commas, embedded newlines, and escaped double-quotes (`""`) — exactly what Google's CSV format requires
+- Added `parseGoogleCSV` which auto-detects Google Maps format by checking for `title` and `url` headers, then maps: `Title` → name, `Note` + `Comment` (joined with ` · ` if both present) → notes, `URL` → stored maps URL
+- Falls back to a generic column-name mapping for non-Google CSV files (`name`/`restaurant`/`title`, `cuisine`, `neighborhood`/`city`, `status`, `rating`, `notes`, `url`)
+- Google imports default to status `Want to Go` (saved lists = places you want to visit)
+- Blank rows (Google's CSV has a blank second row as a separator) are filtered out
+- Duplicate detection in the import preview now correctly counts and reports how many entries already exist by name, and skips them on confirm
+- Import preview shows the first 3 names plus a count of remaining entries
+
+**Problem 2 — No way to delete entries without opening the edit modal**
+
+**Fix applied:**
+- Added a small `✕` delete button (`r-del-btn`) to the right side of every restaurant card in the list view
+- Tapping it calls `quickDelete(id)` which confirms via a native dialog and removes the entry immediately without opening any modal
+- Delete from within the edit modal (trash icon button) still works as before — both paths are available
+
+**Other improvements in this update:**
+- `url` field added to the add/edit modal ("Google Maps URL") so links can be manually entered or edited after import
+- Each card now shows a `🗺 Maps` link inline in the meta row when a URL is stored; the link opens in a new tab and does not trigger the edit modal
+- Notes search: the search bar now also searches inside notes text, not just name/cuisine/neighborhood
+- `escHtml` helper added throughout card rendering to prevent XSS from restaurant names or notes containing `<`, `>`, `&`, or `"`
+
+### v1.2.0 — Restaurant tracker: Leaflet map + Elo ranking minigame
+
+**New: Map view**
+
+A full-width Leaflet.js (OpenStreetMap tiles, no API key required) map added as a second tab in `restaurants.html`. Custom SVG pin markers colored by status — terracotta for Visited/Favorite, slate-blue for Want to Go. Tapping a pin shows a popup with name, cuisine, neighborhood, status, rating, Elo rank (if ranked), a notes preview, and an Edit button.
+
+Geocoding uses Nominatim (OpenStreetMap's free geocoding service). Coordinates are fetched automatically in the background when a new manual Visited entry is saved. For imported entries, a `📍 Locate` button appears on the card in list view and in a "Missing location" panel below the map. Coordinates are stored as `lat`/`lng` on each restaurant object.
+
+**New: Elo ranking minigame**
+
+A head-to-head comparison game for ranking visited restaurants relative to each other. Uses a binary search algorithm over the ranked pool (sorted by Elo score, best to worst). Each round picks the midpoint of the current search window and asks "Better / Same / Worse." The window narrows after each answer until it's ≤ 1 entry wide, "Same" is selected, or the max comparison count (log₂(pool size) + 2, capped at 7) is reached. Standard Elo formula (K=32) applied to both participants for every comparison.
+
+- **Manual entries:** Elo game launches automatically after saving a new Visited/Favorite restaurant, or when an existing entry is changed to Visited status
+- **Imported entries:** marked with `imported: true`. A `⚡` rank button appears on the card and in the Ranking view. The game is triggered manually so bulk imports don't immediately bombard with comparison prompts
+- Initial Elo seed derived from the numeric rating: rating × 100 + 700 (so a 5/10 → 1200, 10/10 → 1700, 1/10 → 800). Unrated entries start at 1200
+- Result screen shows final rank (#N out of N), tier badge (S/A/B/C/D based on percentile), and Elo score
+
+**New: Ranking view (tab)**
+
+A dedicated tab showing the full ranked leaderboard sorted by Elo, with rank number, tier badge, raw Elo score, match count, and the existing 1–10 rating. Unranked visited entries appear below the leaderboard with a `⚡` button to start ranking.
+
+**Tier system** (percentile-based, updates as the pool grows):
+- S — top 5%
+- A — top 6–20%
+- B — top 21–45%
+- C — top 46–70%
+- D — bottom 30%
+
+**Other changes in this version:**
+- Nav stats bar replaced with a 4-tab row: List / Map / Ranking / Stats
+- `eloRating`, `eloGames`, `eloRanked`, `imported`, `lat`, `lng` fields added to all restaurant entries (backward-compatible: missing fields are treated as defaults)
+- Elo rank badge (`#N`) displayed on list cards for ranked visited entries; top 3 get gold styling
+- Sort-by "Elo rank" option added to filter panel
+- Stats view gains two new stat cards: "Elo ranked" count and "On map" count
+- Import toast updated to remind user to mark entries as Visited and tap ⚡ to rank
