@@ -224,3 +224,23 @@ A dedicated tab showing the full ranked leaderboard sorted by Elo, with rank num
 - Sort-by "Elo rank" option added to filter panel
 - Stats view gains two new stat cards: "Elo ranked" count and "On map" count
 - Import toast updated to remind user to mark entries as Visited and tap ⚡ to rank
+
+### v1.2.1 — "Nommies" rename + fitness page overhaul
+
+**`restaurants.html` — renamed to Nommies**
+
+All user-facing text updated from "Restaurants" / "Restaurant" to "Nommies" / "Nommie": page title, header, search placeholder, add/edit modal titles, save toast, delete confirm dialog, and empty state messages. The `localStorage` key (`lifetracker_v1_restaurants`) and all internal variable/function names are unchanged, so existing data is fully preserved.
+
+**`fitness.html` — replaced with new version**
+
+The fitness page was replaced in full. Key changes in the new version:
+
+- **Desktop sidebar navigation** — a sticky left sidebar appears on screens ≥ 768px, replacing the bottom nav for desktop use. Each day button (Push, Pull, Legs, Abs, Log) is listed vertically with a colored active state. The Hunter link sits at the bottom of the sidebar. The bottom nav is hidden on desktop via media query.
+- **Calendar day popout** — tapping any cell in the monthly calendar now opens a bottom sheet where you can select one or more workout types (or Rest) for that day, save, or delete the entry. Previously the calendar was read-only.
+- **Multi-type logging per day** — a single day can now have multiple workout types logged (e.g. Push + Abs together). Each day panel shows color-coded tags for everything logged that day. The log button row hides once that day's type is logged.
+- **Safe area insets** — `env(safe-area-inset-bottom)` and `env(safe-area-inset-top)` applied throughout for notch/home-indicator support on iOS.
+- **Motivational quotes** — a daily rotating quote appears in the top bar subtitle, seeded by the calendar date so it changes each day and is consistent across sessions.
+- **Updated exercise content** — revised sets, reps, rest times, technique notes, and muscle tags across Push, Pull, Legs, and Abs panels.
+- **`← Home` link** added back to the top bar (was present in the previous version, missing from the uploaded file — restored during integration).
+- **Muscle summary + session history** wired back into the Log tab — `renderMuscleSummary()` and `renderHistory()` are now called by `refreshLog()` and their target DOM elements restored. The 7-day muscle volume bar chart and scrollable session history (last 60 entries with delete) both render correctly.
+- `localStorage` key remains `ppl_v3` — all existing workout history is preserved.
