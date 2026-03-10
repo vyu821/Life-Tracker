@@ -119,6 +119,9 @@ A restaurant tracker with four tabs: List, Map, Ranking, Stats.
 
 ## Changelog
 
+### v1.3.3 — Nommies: singular rename + map fix
+Singular form of "Nommie" renamed to "Nommy" throughout `nommies.html`: modal titles (New Nommy, Edit Nommy), placeholder text, save toast, delete confirm dialog, and achievement toast. "Nommies" (plural) is unchanged. Map blank-screen bug fixed: `mapView` now gets `display:block` explicitly on tab switch (previously set to `''` which could inherit `none` from the stylesheet), and `invalidateSize` now fires via `requestAnimationFrame` plus a 300ms fallback so Leaflet always measures the container after it's fully visible.
+
 ### v1.3.2 — Fitness log tab cleanup + calendar Sun-first
 Removed the "Muscles (last 7 days)" bar chart and session history list from the Log tab in `fitness.html` — both are redundant given the home dashboard calendar. `renderMuscleSummary` and `renderHistory` functions removed entirely; `refreshLog` simplified to just `renderCal` + `calcStreaks`. Calendar header and start-of-week logic changed from Monday-first to Sunday-first.
 

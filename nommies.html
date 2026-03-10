@@ -261,10 +261,10 @@
 <div class="overlay" id="restaurantOverlay" onclick="closeOverlayIfOutside(event,'restaurantOverlay')">
   <div class="modal">
     <div class="panel-handle"></div>
-    <div class="modal-title" id="modalTitle">New Nommie</div>
+    <div class="modal-title" id="modalTitle">New Nommy</div>
     <input type="hidden" id="editId">
     <label class="field-label">Name *</label>
-    <input class="field-input" id="rName" type="text" placeholder="Nommie name" maxlength="100">
+    <input class="field-input" id="rName" type="text" placeholder="Nommy name" maxlength="100">
     <label class="field-label">Cuisine</label>
     <input class="field-input" id="rCuisine" type="text" placeholder="e.g. Japanese, Italian">
     <label class="field-label">Neighborhood / City</label>
@@ -375,7 +375,7 @@ function setView(v){
     if(t)t.classList.toggle('active',n===v);
   });
   document.getElementById('viewList').style.display    =v==='list'   ?'':'none';
-  document.getElementById('mapView').style.display     =v==='map'    ?'':'none';
+  document.getElementById('mapView').style.display     =v==='map'    ?'block':'none';
   document.getElementById('viewRanking').style.display =v==='ranking'?'':'none';
   document.getElementById('viewStats').style.display   =v==='stats'  ?'':'none';
   document.getElementById('fabBtn').style.display      =v==='map'    ?'none':'flex';
@@ -554,7 +554,7 @@ function initMap(){
     mapMarkers.push(marker);
   });
 
-  setTimeout(()=>mapInstance.invalidateSize(),120);
+  requestAnimationFrame(()=>{mapInstance.invalidateSize();setTimeout(()=>mapInstance.invalidateSize(),300);});
   renderUnlocated(data);
 }
 
@@ -711,7 +711,7 @@ function renderStats(){
 function openAddModal(){
   const data=getData();
   ['editId','rName','rCuisine','rNeighborhood','rNotes','rUrl'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('modalTitle').textContent="New Nommie";
+  document.getElementById('modalTitle').textContent="New Nommy";
   document.getElementById('rStatus').value='Visited';
   document.getElementById('deleteBtn').style.display='none';
   selectedRating=0;updateRatingBtns();populateListSelect(data,'');
@@ -724,7 +724,7 @@ function openEditModal(id){
   const data=getData(),r=data.restaurants.find(x=>x.id===id);
   if(!r)return;
   document.getElementById('editId').value=id;
-  document.getElementById('modalTitle').textContent='Edit Nommie';
+  document.getElementById('modalTitle').textContent='Edit Nommy';
   document.getElementById('rName').value=r.name;
   document.getElementById('rCuisine').value=r.cuisine||'';
   document.getElementById('rNeighborhood').value=r.neighborhood||'';
@@ -783,7 +783,7 @@ function saveRestaurant(){
   else data.restaurants.push(r);
   saveData(data);
   document.getElementById('restaurantOverlay').classList.remove('open');
-  showToast(editId?'Updated!':'Nommie added!');
+  showToast(editId?'Updated!':'Nommy added!');
   renderList();renderListChips();
 
   // Trigger Elo automatically for new manual visited entries, or entries that just became visited
@@ -797,7 +797,7 @@ function saveRestaurant(){
 }
 function deleteRestaurant(){
   const id=document.getElementById('editId').value;
-  if(!id||!confirm('Delete this nommie?'))return;
+  if(!id||!confirm('Delete this nommy?'))return;
   const data=getData();
   data.restaurants=data.restaurants.filter(r=>r.id!==id);
   saveData(data);
@@ -831,7 +831,7 @@ function startEloGame(newId){
     const idx=fresh.restaurants.findIndex(x=>x.id===newId);
     if(idx>=0){fresh.restaurants[idx].eloRanked=true;fresh.restaurants[idx].imported=false;}
     saveData(fresh);
-    showToast('🏆 First ranked nommie!');
+    showToast('🏆 First ranked nommy!');
     if(currentView==='ranking')renderRanking();
     else renderList();
     return;
