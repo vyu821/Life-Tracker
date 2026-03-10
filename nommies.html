@@ -12,8 +12,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <style>
   :root {
@@ -25,6 +23,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;}
+  body.modal-open{overflow:hidden;position:fixed;width:100%;}
   .container{max-width:430px;margin:0 auto;padding:0 20px 100px;}
   .nav{display:flex;align-items:center;justify-content:space-between;padding-top:52px;padding-bottom:20px;}
   .back-btn{display:flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:14px;font-weight:500;}
@@ -92,11 +91,17 @@
 
   /* Map */
   #mapView{display:none;}
-  #mapContainer{width:calc(100% + 40px);margin-left:-20px;height:55vh;min-height:300px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:16px;}
-  #map{width:100%;height:100%;}
-  .map-legend{display:flex;gap:20px;padding:10px 0 14px;font-size:12px;color:var(--text-muted);}
-  .legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
-  .map-unlocated{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+  #mapCardGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:80px;}
+  .map-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:box-shadow .15s;}
+  .map-card:active{box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+  .map-card-thumb{width:100%;height:110px;background:#e8e4de;position:relative;overflow:hidden;}
+  .map-card-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .map-card-thumb-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--accent-light);}
+  .map-card-body{padding:10px 10px 12px;}
+  .map-card-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .map-card-meta{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .map-card-status{display:inline-block;font-size:10px;font-weight:700;margin-top:5px;padding:2px 7px;border-radius:4px;}
+  .map-grid-empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text-muted);}
   .map-unlocated-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;}
   .unlocated-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;gap:10px;}
   .unlocated-item:last-child{border-bottom:none;}
@@ -179,8 +184,6 @@
   .rank-meta{font-size:12px;color:var(--text-muted);}
 
   /* Leaflet popup */
-  .leaflet-popup-content-wrapper{border-radius:14px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,0.15)!important;overflow:hidden;}
-  .leaflet-popup-content{margin:0!important;}
   .map-popup{padding:14px 16px;min-width:190px;font-family:'DM Sans',sans-serif;}
   .map-popup-name{font-family:'DM Serif Display',serif;font-size:16px;line-height:1.2;margin-bottom:4px;color:#1A1A1A;}
   .map-popup-meta{font-size:11px;color:#888880;margin-bottom:8px;}
@@ -284,12 +287,7 @@ html.dark input, html.dark textarea, html.dark select { color-scheme: dark; }
 
   <!-- MAP -->
   <div id="mapView">
-    <div id="mapContainer"><div id="map"></div></div>
-    <div class="map-legend">
-      <span><span class="legend-dot" style="background:var(--visited-pin)"></span>Visited</span>
-      <span><span class="legend-dot" style="background:var(--want-pin)"></span>Want to go</span>
-    </div>
-    <div id="mapUnlocated"></div>
+    <div id="mapCardGrid"></div>
   </div>
 
   <!-- RANKING -->
@@ -311,11 +309,13 @@ html.dark input, html.dark textarea, html.dark select { color-scheme: dark; }
     <div class="modal-title" id="modalTitle">New Nommy</div>
     <input type="hidden" id="editId">
     <label class="field-label">Name *</label>
-    <input class="field-input" id="rName" type="text" placeholder="Nommy name" maxlength="100" autocomplete="off">
+    <input class="field-input" id="rName" type="text" name="nommy-name-x9" placeholder="Nommy name" maxlength="100" autocomplete="off">
     <label class="field-label">Cuisine</label>
-    <input class="field-input" id="rCuisine" type="text" placeholder="e.g. Japanese, Italian" autocomplete="off">
+    <input class="field-input" id="rCuisine" type="text" name="nommy-cuisine-x9" placeholder="e.g. Japanese, Italian" autocomplete="off">
     <label class="field-label">Neighborhood / City</label>
-    <input class="field-input" id="rNeighborhood" type="text" placeholder="e.g. Mission, SF" autocomplete="off">
+    <input class="field-input" id="rNeighborhood" type="text" name="nommy-hood-x9" placeholder="e.g. Mission, SF" autocomplete="off">
+    <label class="field-label">Address</label>
+    <input class="field-input" id="rAddress" type="text" name="nommy-addr-x9" placeholder="e.g. 123 Main St, San Francisco, CA" autocomplete="off" autocorrect="off">
     <label class="field-label">Status</label>
     <select class="field-input" id="rStatus">
       <option>Visited</option><option>Want to Go</option><option>Favorite</option>
@@ -397,7 +397,6 @@ const ELO_DEFAULT = 1200;
 const VISITED_STATUSES = ['Visited','Favorite'];
 
 let selectedList='All', selectedRating=0, importPending=[], currentView='list';
-let mapInstance=null, mapMarkers=[];
 let eloState=null; // { newId, pool, lo, hi, comparisons, maxComparisons }
 
 // ════════════════════════════════════════════════
@@ -438,9 +437,22 @@ function setView(v){
 // ════════════════════════════════════════════════
 function renderListChips(){
   const data=getData();
-  document.getElementById('listChips').innerHTML=
-    ['All',...allLists(data)].map(l=>`<div class="chip${l===selectedList?' active':''}" onclick="selectList('${l.replace(/'/g,"\\'")}'">${escHtml(l)}</div>`).join('')+
-    '<div class="chip" onclick="openManageLists()" style="color:var(--text-muted)">+ List</div>';
+  const chips=['All',...allLists(data)].map(l=>{
+    const div=document.createElement('div');
+    div.className='chip'+(l===selectedList?' active':'');
+    div.textContent=l;
+    div.addEventListener('click',()=>selectList(l));
+    return div;
+  });
+  const plus=document.createElement('div');
+  plus.className='chip';
+  plus.style.color='var(--text-muted)';
+  plus.textContent='+ List';
+  plus.addEventListener('click',openManageLists);
+  const container=document.getElementById('listChips');
+  container.innerHTML='';
+  chips.forEach(c=>container.appendChild(c));
+  container.appendChild(plus);
 }
 function selectList(l){selectedList=l;renderListChips();renderList();}
 function toggleFilters(){
@@ -502,10 +514,8 @@ function renderList(){
 
     // Action buttons (right column)
     const needsRank=isVisited&&r.imported&&!r.eloRanked;
-    const needsLoc=isVisited&&!r.lat;
     const actions=`<div class="r-actions">
       ${needsRank?`<button class="r-rank-btn" onclick="startEloGame('${r.id}')" title="Rank this">⚡</button>`:''}
-      ${needsLoc?`<button class="r-loc-btn" onclick="geocodeOne('${r.id}',this)" title="Add to map">📍</button>`:''}
       <button class="r-del-btn" onclick="quickDelete('${r.id}')" title="Delete">✕</button>
     </div>`;
 
@@ -538,135 +548,55 @@ function quickDelete(id){
 }
 
 // ════════════════════════════════════════════════
-//  MAP VIEW — Leaflet + Nominatim geocoding
+//  MAP VIEW — card grid with Google Maps links
 // ════════════════════════════════════════════════
 function initMap(){
-  if(typeof L==='undefined'){
-    document.getElementById('mapContainer').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;flex-direction:column;gap:8px"><span>🗺️</span><span>Map failed to load — check your connection and refresh.</span></div>';
+  const data=getData();
+  const items=data.restaurants||[];
+  const el=document.getElementById('mapCardGrid');
+  if(!el)return;
+
+  if(!items.length){
+    el.innerHTML='<div class="map-grid-empty"><div style="font-size:36px;margin-bottom:10px">🍽️</div><div>No nommies yet — add some to see them here.</div></div>';
     return;
   }
-  const data=getData();
-  const located=(data.restaurants||[]).filter(r=>r.lat&&r.lng);
 
-  if(!mapInstance){
-    let clat=37.7749,clng=-122.4194;
-    if(located.length){
-      clat=located.reduce((s,r)=>s+r.lat,0)/located.length;
-      clng=located.reduce((s,r)=>s+r.lng,0)/located.length;
-    }
-    mapInstance=L.map('map',{zoomControl:true}).setView([clat,clng],12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',
-      maxZoom:19
-    }).addTo(mapInstance);
-  }
-
-  mapMarkers.forEach(m=>m.remove());
-  mapMarkers=[];
-
-  const sortedPool=getSortedRankedPool(data.restaurants);
-
-  located.forEach(r=>{
-    const isVisited=VISITED_STATUSES.includes(r.status);
-    const color=isVisited?'#C4714A':'#6B8CAE';
-    const dark=isVisited?'#8B4520':'#3A5A7A';
-
-    const icon=L.divIcon({
-      html:`<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
-        <path d="M13 1C6.9 1 2 5.9 2 12c0 8.5 11 21 11 21S24 20.5 24 12C24 5.9 19.1 1 13 1z"
-          fill="${color}" stroke="${dark}" stroke-width="1.5"/>
-        <circle cx="13" cy="12" r="5.5" fill="white" opacity="0.92"/>
-      </svg>`,
-      className:'',iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-36]
-    });
-
-    const ri=sortedPool.findIndex(x=>x.id===r.id);
-    const rankStr=(isVisited&&r.eloRanked&&ri>=0)?`<span style="font-weight:700;color:#C4714A">#${ri+1}</span> · `:'';
-    const statColor=r.status==='Favorite'?'#E65100':isVisited?'#2E7D32':'#C4714A';
-    const statBg=r.status==='Favorite'?'#FFF3E0':isVisited?'#E8F5E9':'#F5E8E0';
-
-    const popup=`<div class="map-popup">
-      <div class="map-popup-name">${escHtml(r.name)}</div>
-      <div class="map-popup-meta">${rankStr}${escHtml([r.cuisine,r.neighborhood].filter(Boolean).join(' · '))}</div>
-      <div class="map-popup-badges">
-        <span style="background:${statBg};color:${statColor};padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700">${r.status||'Visited'}</span>
-        ${r.rating?`<span style="background:#C4714A;color:#fff;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700">${r.rating}/10</span>`:''}
-        ${(isVisited&&r.eloRanked&&ri>=0)?`<span style="background:#1A1A1A;color:#fff;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700">#${ri+1}</span>`:''}
-      </div>
-      ${r.notes?`<div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.4">${escHtml(r.notes.slice(0,80))}${r.notes.length>80?'…':''}</div>`:''}
-      <button class="map-popup-edit" onclick="openEditModal('${r.id}')">Edit</button>
-    </div>`;
-
-    const marker=L.marker([r.lat,r.lng],{icon})
-      .bindPopup(popup,{maxWidth:240})
-      .addTo(mapInstance);
-    mapMarkers.push(marker);
+  const sorted=[...items].sort((a,b)=>{
+    const av=VISITED_STATUSES.includes(a.status)?0:1;
+    const bv=VISITED_STATUSES.includes(b.status)?0:1;
+    if(av!==bv)return av-bv;
+    return a.name.localeCompare(b.name);
   });
 
-  requestAnimationFrame(()=>{mapInstance.invalidateSize();setTimeout(()=>mapInstance.invalidateSize(),300);});
-  renderUnlocated(data);
-}
+  const cards=sorted.map(r=>{
+    const isVisited=VISITED_STATUSES.includes(r.status);
+    const sk=(r.status||'Visited').replace(' to Go','');
+    const statusColors={Visited:'background:#E8F5E9;color:#2E7D32',Favorite:'background:#FFF3E0;color:#E65100',Want:'background:#F5E8E0;color:#C4714A'};
+    const sc=statusColors[sk]||statusColors.Visited;
+    const queryStr=[r.name,r.address||r.neighborhood].filter(Boolean).join(' ');
+    const mapsUrl=r.url||('https://maps.google.com/?q='+encodeURIComponent(queryStr));
+    const icon=isVisited?'✅':'🔖';
+    const thumb='<div class="map-card-thumb-placeholder">'+icon+'</div>';
 
-function renderUnlocated(data){
-  const unlocated=(data.restaurants||[]).filter(r=>VISITED_STATUSES.includes(r.status)&&!r.lat);
-  const el=document.getElementById('mapUnlocated');
-  if(!unlocated.length){el.innerHTML='';return;}
-  el.innerHTML=`<div class="map-unlocated">
-    <div class="map-unlocated-title">Missing location (${unlocated.length})</div>
-    ${unlocated.map(r=>`
-      <div class="unlocated-item">
-        <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.name)}${r.neighborhood?`<span style="color:var(--text-muted);font-size:12px"> · ${escHtml(r.neighborhood)}</span>`:''}</span>
-        <button class="locate-btn" onclick="geocodeOne('${r.id}',this)">📍 Locate</button>
-      </div>`).join('')}
-  </div>`;
-}
+    const card=document.createElement('div');
+    card.className='map-card';
+    card.innerHTML=
+      '<div class="map-card-thumb">'+thumb+'</div>'+
+      '<div class="map-card-body">'+
+        '<div class="map-card-name">'+escHtml(r.name)+'</div>'+
+        '<div class="map-card-meta">'+escHtml([r.cuisine,r.address||r.neighborhood].filter(Boolean).join(' · '))+'</div>'+
+        '<span class="map-card-status" style="'+sc+'">'+escHtml(r.status||'Visited')+'</span>'+
+      '</div>';
+    card.addEventListener('click',function(){window.open(mapsUrl,'_blank');});
+    return card;
+  });
 
-async function geocodeOne(id,btn){
-  const data=getData(),r=data.restaurants.find(x=>x.id===id);
-  if(!r)return;
-  if(btn){btn.textContent='…';btn.disabled=true;}
-  const q=[r.name,r.neighborhood,'restaurant'].filter(Boolean).join(' ');
-  try{
-    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
-      {headers:{'Accept-Language':'en','User-Agent':'LifeTracker/1.0'}});
-    const results=await res.json();
-    if(results.length){
-      const fresh=getData();
-      const idx=fresh.restaurants.findIndex(x=>x.id===id);
-      if(idx>=0){
-        fresh.restaurants[idx].lat=parseFloat(results[0].lat);
-        fresh.restaurants[idx].lng=parseFloat(results[0].lon);
-        saveData(fresh);
-      }
-      showToast(`📍 Located ${r.name}`);
-      if(currentView==='map')initMap();
-      else renderList();
-    } else {
-      showToast('Location not found — try adding a city to the neighborhood field');
-      if(btn){btn.textContent='📍 Locate';btn.disabled=false;}
-    }
-  }catch(e){
-    showToast('Geocode failed — check your connection');
-    if(btn){btn.textContent='📍 Locate';btn.disabled=false;}
-  }
+  el.innerHTML='';
+  cards.forEach(c=>el.appendChild(c));
 }
-
 async function geocodeBackground(id){
-  const data=getData(),r=data.restaurants.find(x=>x.id===id);
-  if(!r||r.lat)return;
-  const q=[r.name,r.neighborhood,'restaurant'].filter(Boolean).join(' ');
-  try{
-    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
-      {headers:{'Accept-Language':'en','User-Agent':'LifeTracker/1.0'}});
-    const results=await res.json();
-    if(results.length){
-      const fresh=getData();
-      const idx=fresh.restaurants.findIndex(x=>x.id===id);
-      if(idx>=0){fresh.restaurants[idx].lat=parseFloat(results[0].lat);fresh.restaurants[idx].lng=parseFloat(results[0].lon);saveData(fresh);}
-    }
-  }catch(e){/* silent */}
+  // no-op — we no longer need coordinates for the map view
 }
-
 // ════════════════════════════════════════════════
 //  RANKING VIEW
 // ════════════════════════════════════════════════
@@ -692,9 +622,9 @@ function renderRanking(){
     return;
   }
 
-  let html='';
+  let h='';
   if(pool.length){
-    html+=pool.map((r,i)=>{
+    h+=pool.map((r,i)=>{
       const n=i+1,tier=tierOf(n,pool.length);
       return`<div class="rank-row" onclick="openEditModal('${r.id}')">
         <div class="rank-num">${n}</div>
@@ -713,17 +643,17 @@ function renderRanking(){
     }).join('');
   }
   if(unranked.length){
-    html+=`<div style="padding:16px 4px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">Unranked (${unranked.length})</div>`;
-    html+=unranked.map(r=>`<div class="rank-row" style="opacity:.65">
+    h+=`<div style="padding:16px 4px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">Unranked (${unranked.length})</div>`;
+    h+=unranked.map(r=>`<div class="rank-row" style="opacity:.65">
       <div class="rank-num" style="font-size:16px;color:var(--text-muted)">—</div>
       <div class="rank-info" onclick="openEditModal('${r.id}')">
         <div class="rank-name">${escHtml(r.name)}</div>
         <div class="rank-meta">${r.cuisine?`🍴 ${escHtml(r.cuisine)}`:'No cuisine set'}</div>
       </div>
-      <button class="r-rank-btn" onclick="startEloGame('${r.id}')" title="Rank this">⚡</button>
+      <button class="r-rank-btn" onclick="startEloGame('${r.id}')">⚡</button>
     </div>`).join('');
   }
-  el.innerHTML=html;
+  el.innerHTML=h;
 }
 
 // ════════════════════════════════════════════════
@@ -748,110 +678,10 @@ function renderStats(){
       <div class="stat-card"><div class="stat-val">${visited.length}</div><div class="stat-lbl">Visited</div></div>
       <div class="stat-card"><div class="stat-val">${items.filter(r=>r.status==='Want to Go').length}</div><div class="stat-lbl">Want to go</div></div>
       <div class="stat-card"><div class="stat-val">${rankedCount}</div><div class="stat-lbl">Elo ranked</div></div>
-      <div class="stat-card"><div class="stat-val">${items.filter(r=>r.lat).length}</div><div class="stat-lbl">On map</div></div>
+      <div class="stat-card"><div class="stat-val">${items.filter(r=>r.lat).length}</div><div class="stat-lbl">Located</div></div>
       <div class="stat-card wide"><div class="stat-lbl" style="margin-bottom:10px">Top cuisines</div>${topC.length?topC.map(row).join(''):'<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}</div>
       <div class="stat-card wide"><div class="stat-lbl" style="margin-bottom:10px">Cities</div>${topCi.length?topCi.map(row).join(''):'<div style="color:var(--text-muted);font-size:14px">No data yet</div>'}</div>
     </div>`;
-}
-
-// ════════════════════════════════════════════════
-//  ADD / EDIT MODAL
-// ════════════════════════════════════════════════
-function openAddModal(){
-  const data=getData();
-  ['editId','rName','rCuisine','rNeighborhood','rNotes','rUrl'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('modalTitle').textContent="New Nommy";
-  document.getElementById('rStatus').value='Visited';
-  document.getElementById('deleteBtn').style.display='none';
-  selectedRating=0;updateRatingBtns();populateListSelect(data,'');
-  document.getElementById('restaurantOverlay').classList.add('open');
-  if(window.lucide)lucide.createIcons();
-}
-function openEditModal(id){
-  // Close map popup if open
-  if(mapInstance)mapInstance.closePopup();
-  const data=getData(),r=data.restaurants.find(x=>x.id===id);
-  if(!r)return;
-  document.getElementById('editId').value=id;
-  document.getElementById('modalTitle').textContent='Edit Nommy';
-  document.getElementById('rName').value=r.name;
-  document.getElementById('rCuisine').value=r.cuisine||'';
-  document.getElementById('rNeighborhood').value=r.neighborhood||'';
-  document.getElementById('rStatus').value=r.status||'Visited';
-  document.getElementById('rNotes').value=r.notes||'';
-  document.getElementById('rUrl').value=r.url||'';
-  document.getElementById('deleteBtn').style.display='block';
-  selectedRating=r.rating||0;updateRatingBtns();populateListSelect(data,r.lists?.[0]||'');
-  document.getElementById('restaurantOverlay').classList.add('open');
-  if(window.lucide)lucide.createIcons();
-}
-function populateListSelect(data,current){
-  const lists=allLists(data).filter(l=>!['Visited','Want to Go','Favorites'].includes(l));
-  document.getElementById('rList').innerHTML='<option value="">None</option>'+lists.map(l=>`<option value="${escHtml(l)}"${l===current?' selected':''}>${escHtml(l)}</option>`).join('');
-}
-function setRating(n){selectedRating=n;updateRatingBtns();}
-function updateRatingBtns(){
-  document.querySelectorAll('.rating-btn').forEach(b=>{
-    const v=b.textContent==='—'?0:parseInt(b.textContent);
-    b.classList.toggle('active',v===selectedRating);
-  });
-}
-function saveRestaurant(){
-  const name=document.getElementById('rName').value.trim();
-  if(!name){showToast('Please enter a name');return;}
-  const data=getData(),editId=document.getElementById('editId').value;
-  const id=editId||Date.now().toString(36)+Math.random().toString(36).slice(2);
-  const listVal=document.getElementById('rList').value;
-  const prevR=editId?data.restaurants.find(x=>x.id===editId):null;
-  const newStatus=document.getElementById('rStatus').value;
-  const isNew=!editId;
-  const becameVisited=prevR&&!VISITED_STATUSES.includes(prevR.status)&&VISITED_STATUSES.includes(newStatus);
-
-  // Seed Elo from rating: rating 5 → 1200, 10 → 1700, 1 → 700
-  const seedElo=selectedRating?700+(selectedRating*100):ELO_DEFAULT;
-
-  const r={
-    id,name,
-    cuisine:     document.getElementById('rCuisine').value.trim(),
-    neighborhood:document.getElementById('rNeighborhood').value.trim(),
-    status:      newStatus,
-    rating:      selectedRating||null,
-    notes:       document.getElementById('rNotes').value.trim(),
-    url:         document.getElementById('rUrl').value.trim(),
-    lists:       listVal?[listVal]:[],
-    dateAdded:   editId?(prevR?.dateAdded||new Date().toISOString()):new Date().toISOString(),
-    lat:         prevR?.lat||null,
-    lng:         prevR?.lng||null,
-    eloRating:   prevR?.eloRating||seedElo,
-    eloGames:    prevR?.eloGames||0,
-    eloRanked:   prevR?.eloRanked||false,
-    imported:    prevR?.imported||false
-  };
-
-  if(editId){const i=data.restaurants.findIndex(x=>x.id===editId);if(i>=0)data.restaurants[i]=r;}
-  else data.restaurants.push(r);
-  saveData(data);
-  document.getElementById('restaurantOverlay').classList.remove('open');
-  showToast(editId?'Updated!':'Nommy added!');
-  renderList();renderListChips();
-
-  // Trigger Elo automatically for new manual visited entries, or entries that just became visited
-  const isManualVisited=VISITED_STATUSES.includes(newStatus)&&!r.imported&&(isNew||becameVisited);
-  if(isManualVisited){
-    geocodeBackground(r.id);
-    setTimeout(()=>startEloGame(r.id),400);
-  } else if(isNew&&VISITED_STATUSES.includes(newStatus)){
-    geocodeBackground(r.id);
-  }
-}
-function deleteRestaurant(){
-  const id=document.getElementById('editId').value;
-  if(!id||!confirm('Delete this nommy?'))return;
-  const data=getData();
-  data.restaurants=data.restaurants.filter(r=>r.id!==id);
-  saveData(data);
-  document.getElementById('restaurantOverlay').classList.remove('open');
-  showToast('Deleted');renderList();renderListChips();
 }
 
 // ════════════════════════════════════════════════
@@ -1177,7 +1007,7 @@ function exportJSON(){
 // ════════════════════════════════════════════════
 //  UTILITIES
 // ════════════════════════════════════════════════
-function closeOverlayIfOutside(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('open');}
+function closeOverlayIfOutside(e,id){if(e.target===document.getElementById(id)){document.body.classList.remove('modal-open');document.getElementById(id).classList.remove('open');}}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
 // ════════════════════════════════════════════════
