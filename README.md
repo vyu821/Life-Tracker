@@ -10,7 +10,7 @@ A personal life-tracking web app that runs entirely as a static site on GitHub P
 index.html      Home dashboard with calendar and tracker cards
 fitness.html    PPL workout tracker (Push / Pull / Legs / Abs)
 nommies.html    Restaurant tracker with map and Elo ranking
-chores.html     Daily/weekly chore tracker
+chores.html     Chore and task tracker with rich scheduling
 media.html      Movies, TV shows, and books tracker
 README.md       This file
 ```
@@ -50,11 +50,22 @@ A restaurant tracker with four tabs: List, Map, Ranking, Stats.
 
 ### Chores (`chores.html`)
 
-- Define chores with name, emoji, and frequency (daily or specific days)
-- **Today tab** — tappable rows with live streak counts
-- **This week tab** — 7-day completion grid
-- **Manage tab** — add, edit, delete chores
-- Stats strip: best streak, completions this month, week rate
+A full-featured chore and task tracker with rich scheduling, four tabs, and a completion flow with optional notes.
+
+**Data model.** Each chore stores a name, emoji, category, type (recurring or one-time), priority (low, medium, high), optional notes, created date, due date, last completed date, and active status. Recurring chores support daily, weekly (specific days), every N days, and monthly (specific day of month) frequencies. One-time tasks have a single due date and are automatically deactivated once completed.
+
+**Today tab.** Shows everything due today plus any overdue items, sorted by priority then due date. An overdue banner at the top counts items that need attention; overdue rows are visually distinct with a red border. Tapping a chore expands an inline note field before confirming completion, then shows a toast. Completed items can be tapped again to undo. A separate Upcoming section below shows items due in the next 7 days.
+
+**Calendar tab.** Monthly calendar with colored dots indicating completed days, days with due chores, and days where chores were missed. Tap any day to open a detail sheet listing what was completed (with any note), what was due, and the status of each item. Navigate between months with chevron buttons.
+
+**Log tab.** Chronological history of all completions, newest first. Each entry shows the chore name, date, category, and any note recorded at completion time. Filter by name or category. Delete individual entries with confirmation.
+
+**Manage tab.** Full list of all chores with active, archived, and all views. Add or edit chores via a bottom-sheet modal with all fields. Archive chores to hide them without losing history; unarchive them later. Delete chores and all associated history. Drag-to-reorder via grip handles (desktop HTML5 drag).
+
+**Stats strip.** Shown at the top of every tab: best current daily streak, total completions this month, and on-time completion rate for the past 7 days.
+
+**Migration.** On load, any existing v1 data (habits array with daily/weekly frequencies, completions as arrays of IDs) is automatically converted to the v2 schema with no data loss.
+
 - Data stored in `lifetracker_v1_chores`
 
 ### Media (`media.html`)
@@ -91,7 +102,7 @@ A restaurant tracker with four tabs: List, Map, Ranking, Stats.
 |---|---|---|
 | `ppl_v3` | `fitness.html`, `index.html` | `{ 'YYYY-MM-DD': { types:[], rest:bool } }` |
 | `lifetracker_v1_restaurants` | `nommies.html`, `index.html` | `{ restaurants: [...] }` |
-| `lifetracker_v1_chores` | `chores.html`, `index.html` | `{ habits: [...], completions: {...} }` |
+| `lifetracker_v1_chores` | `chores.html`, `index.html` | `{ version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] } }` |
 | `lifetracker_v1_media` | `media.html`, `index.html` | `{ movies: [...], tv: [...], books: [...] }` |
 | `lifetracker_v1_calendar` | `index.html` | `{ 'YYYY-MM-DD': { types:[], note:'' } }` |
 | `lifetracker_v1_card_order` | `index.html` | `['nommies','fitness','chores','media']` |
@@ -118,6 +129,9 @@ A restaurant tracker with four tabs: List, Map, Ranking, Stats.
 ---
 
 ## Changelog
+
+### v1.4.0 — Chores overhaul
+`chores.html` fully rebuilt. New data model (v2 schema) supports recurring chores (daily, weekly by day, every N days, monthly) and one-time tasks, each with emoji, category, priority (low/medium/high), notes, and active/archived status. Four tabs: Today (overdue banner, priority sorting, inline completion notes, upcoming section), Calendar (dots for completions and missed chores, tap-to-view day detail sheet), Log (full history with filter and per-entry delete), Manage (active/archived filter, drag-to-reorder, full edit/archive/delete). Stats strip shows best streak, monthly completions, and 7-day on-time rate. Migration function converts all existing v1 data automatically. `lifetracker_v1_chores` schema updated to `{ version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] } }`.
 
 ### v1.3.3 — Nommies: singular rename + map fix
 Singular form of "Nommie" renamed to "Nommy" throughout `nommies.html`: modal titles (New Nommy, Edit Nommy), placeholder text, save toast, delete confirm dialog, and achievement toast. "Nommies" (plural) is unchanged. Map blank-screen bug fixed: `mapView` now gets `display:block` explicitly on tab switch (previously set to `''` which could inherit `none` from the stylesheet), and `invalidateSize` now fires via `requestAnimationFrame` plus a 300ms fallback so Leaflet always measures the container after it's fully visible.

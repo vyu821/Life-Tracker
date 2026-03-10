@@ -1,7 +1,7 @@
 <!--
-  LifeTracker — Chores Tracker (chores.html)
-  localStorage keys:
-    lifetracker_v1_chores  → { habits: [...], completions: { "YYYY-MM-DD": [id, ...] } }
+  LifeTracker — Chores Tracker v2 (chores.html)
+  localStorage key: lifetracker_v1_chores
+  Schema v2: { version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] }, order: [...] }
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -14,505 +14,1289 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <style>
-  :root {
-    --bg: #F9F7F4;
-    --card: #FFFFFF;
-    --text: #1A1A1A;
-    --text-muted: #888880;
-    --accent: #C4714A;
-    --accent-light: #F5E8E0;
-    --border: #EDEBE7;
-    --shadow: 0 2px 12px rgba(0,0,0,0.07);
-    --radius: 16px;
-    --font-head: 'DM Serif Display', serif;
-    --font-body: 'DM Sans', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
-  .container { max-width: 430px; margin: 0 auto; padding: 0 20px 100px; }
+:root {
+  --bg: #F9F7F4;
+  --card: #FFFFFF;
+  --text: #1A1A1A;
+  --text-muted: #888880;
+  --accent: #C4714A;
+  --accent-light: #F5E8E0;
+  --border: #EDEBE7;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --radius: 16px;
+  --font-head: 'DM Serif Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --red: #E05252;
+  --red-light: #FDECEA;
+  --green: #4A9B6F;
+  --green-light: #E8F5EE;
+  --yellow: #D4A843;
+  --yellow-light: #FDF6E3;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+.container { max-width: 430px; margin: 0 auto; padding: 0 20px 120px; }
 
-  /* Nav */
-  .nav { display: flex; align-items: center; justify-content: space-between; padding-top: 52px; padding-bottom: 24px; }
-  .back-btn { display: flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.15s; }
-  .back-btn:active { color: var(--accent); }
-  .page-title { font-family: var(--font-head); font-size: 24px; }
-  .nav-right { display: flex; gap: 8px; }
-  .icon-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background 0.15s, transform 0.15s; }
-  .icon-btn:active { background: var(--accent-light); transform: scale(0.93); }
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; padding-top: 52px; padding-bottom: 20px; }
+.back-btn { display: flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.15s; }
+.back-btn:active { color: var(--accent); }
+.page-title { font-family: var(--font-head); font-size: 24px; }
+.nav-right { display: flex; gap: 8px; }
+.icon-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background 0.15s, transform 0.15s; }
+.icon-btn:active { background: var(--accent-light); transform: scale(0.93); }
 
-  /* Tabs */
-  .tabs { display: flex; gap: 4px; background: var(--card); border-radius: 12px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border); }
-  .tab { flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 500; border-radius: 9px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; user-select: none; }
-  .tab.active { background: var(--accent); color: #fff; }
+/* Tabs */
+.tabs { display: flex; gap: 4px; background: var(--card); border-radius: 12px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--border); }
+.tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 12px; font-weight: 500; border-radius: 9px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; user-select: none; }
+.tab.active { background: var(--accent); color: #fff; }
 
-  /* Stats */
-  .stats-row { display: flex; gap: 10px; margin-bottom: 24px; }
-  .stat-card { flex: 1; background: var(--card); border-radius: var(--radius); padding: 14px 12px; border: 1px solid var(--border); text-align: center; }
-  .stat-val { font-family: var(--font-head); font-size: 22px; color: var(--accent); }
-  .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
+/* Stats strip */
+.stats-row { display: flex; gap: 10px; margin-bottom: 20px; }
+.stat-card { flex: 1; background: var(--card); border-radius: var(--radius); padding: 14px 10px; border: 1px solid var(--border); text-align: center; }
+.stat-val { font-family: var(--font-head); font-size: 20px; color: var(--accent); }
+.stat-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-weight: 500; line-height: 1.3; }
 
-  /* Section label */
-  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+/* Section label */
+.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+.section-label-badge { background: var(--red); color: #fff; border-radius: 20px; padding: 2px 8px; font-size: 10px; }
 
-  /* Today habits */
-  .habit-item {
-    background: var(--card);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 16px;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    cursor: pointer;
-    transition: transform 0.15s, border-color 0.15s;
-    user-select: none;
-  }
-  .habit-item:active { transform: scale(0.97); }
-  .habit-item.done { border-color: var(--accent); background: var(--accent-light); }
-  .habit-check {
-    width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    transition: all 0.15s;
-  }
-  .habit-item.done .habit-check { background: var(--accent); border-color: var(--accent); }
-  .habit-icon { font-size: 24px; flex-shrink: 0; }
-  .habit-info { flex: 1; }
-  .habit-name { font-weight: 500; font-size: 16px; }
-  .habit-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .habit-streak { font-size: 13px; font-weight: 600; color: var(--accent); flex-shrink: 0; }
-  .habit-item.done .habit-meta { color: var(--accent); opacity: 0.7; }
+/* Overdue banner */
+.overdue-banner { background: var(--red-light); border: 1px solid #F5C6C6; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--red); font-weight: 500; }
+.overdue-banner svg { flex-shrink: 0; }
 
-  /* Weekly grid */
-  .week-grid { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
-  .week-header { display: grid; grid-template-columns: 1fr repeat(7, 32px); gap: 0; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-  .week-header-cell { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-  .week-row { display: grid; grid-template-columns: 1fr repeat(7, 32px); gap: 0; padding: 8px 12px; border-bottom: 1px solid var(--border); align-items: center; }
-  .week-row:last-child { border-bottom: none; }
-  .week-habit-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; display: flex; align-items: center; gap: 5px; }
-  .week-cell { width: 24px; height: 24px; border-radius: 6px; background: var(--border); margin: 0 auto; }
-  .week-cell.done { background: var(--accent); }
-  .week-cell.today-col { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Chore item */
+.chore-item {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: transform 0.15s;
+  user-select: none;
+}
+.chore-item.overdue { border-color: #F5C6C6; background: #FFFBFB; }
+.chore-item.done { border-color: var(--accent); background: var(--accent-light); }
+.chore-row {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer;
+}
+.chore-check {
+  width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: all 0.2s;
+}
+.chore-item.done .chore-check { background: var(--accent); border-color: var(--accent); }
+.chore-item.overdue .chore-check { border-color: var(--red); }
+.chore-emoji { font-size: 22px; flex-shrink: 0; width: 28px; text-align: center; }
+.chore-info { flex: 1; min-width: 0; }
+.chore-name { font-weight: 500; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chore-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.chore-cat { font-size: 11px; color: var(--text-muted); background: var(--bg); border-radius: 6px; padding: 1px 6px; }
+.chore-overdue-tag { font-size: 11px; color: var(--red); font-weight: 500; }
+.chore-upcoming-tag { font-size: 11px; color: var(--text-muted); }
+.priority-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.priority-dot.high { background: var(--red); }
+.priority-dot.medium { background: var(--yellow); }
+.priority-dot.low { background: var(--green); }
 
-  /* Manage habits */
-  .manage-habit-item {
-    background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
-    padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
-  }
-  .manage-habit-icon { font-size: 22px; }
-  .manage-habit-info { flex: 1; }
-  .manage-habit-name { font-weight: 500; font-size: 15px; }
-  .manage-habit-freq { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .manage-btns { display: flex; gap: 6px; }
-  .small-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
-  .small-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-  .small-btn.danger:hover { background: #FDECEA; color: #C0392B; border-color: #C0392B; }
+/* Completion note expansion */
+.completion-expand {
+  padding: 0 16px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease, padding 0.25s;
+}
+.completion-expand.open { max-height: 120px; padding: 0 16px 14px; }
+.completion-note-input {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: var(--font-body); font-size: 14px; background: var(--bg); color: var(--text);
+  outline: none; resize: none; transition: border-color 0.15s; margin-bottom: 8px;
+}
+.completion-note-input:focus { border-color: var(--accent); }
+.confirm-row { display: flex; gap: 8px; }
+.confirm-btn { flex: 1; padding: 9px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; }
+.confirm-btn.primary { background: var(--accent); color: #fff; }
+.confirm-btn.secondary { background: var(--border); color: var(--text-muted); }
+.confirm-btn:active { opacity: 0.8; }
 
-  /* Empty state */
-  .empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
-  .empty-icon { font-size: 40px; margin-bottom: 12px; }
-  .empty-text { font-size: 15px; line-height: 1.5; }
+/* Calendar */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cal-nav-btn { background: var(--card); border: 1px solid var(--border); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); }
+.cal-nav-btn:active { background: var(--accent-light); }
+.cal-month-label { font-family: var(--font-head); font-size: 18px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 12px; }
+.cal-day-header { text-align: center; font-size: 10px; font-weight: 600; color: var(--text-muted); padding-bottom: 6px; }
+.cal-day {
+  aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 8px; cursor: pointer; transition: background 0.15s; position: relative;
+  font-size: 13px; gap: 2px;
+}
+.cal-day:hover { background: var(--accent-light); }
+.cal-day.today { background: var(--accent-light); font-weight: 600; color: var(--accent); }
+.cal-day.selected { background: var(--accent); color: #fff; }
+.cal-day.other-month { color: var(--border); }
+.cal-day.today.selected { background: var(--accent); color: #fff; }
+.cal-dots { display: flex; gap: 2px; justify-content: center; }
+.cal-dot { width: 4px; height: 4px; border-radius: 50%; }
+.cal-dot.completed { background: var(--accent); }
+.cal-dot.due { background: var(--text-muted); }
+.cal-dot.overdue { background: var(--red); }
 
-  /* FAB */
-  .fab {
-    position: fixed; bottom: 28px; right: 50%;
-    transform: translateX(calc(50% + 175px));
-    width: 56px; height: 56px; border-radius: 18px;
-    background: var(--accent); color: #fff;
-    border: none; font-size: 26px; cursor: pointer;
-    box-shadow: 0 4px 20px rgba(196,113,74,0.45);
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.15s, box-shadow 0.15s;
-    z-index: 10;
-  }
-  .fab:active { transform: translateX(calc(50% + 175px)) scale(0.93); }
-  @media (max-width: 430px) {
-    .fab { right: 20px; transform: none; }
-    .fab:active { transform: scale(0.93); }
-  }
+/* Day popout */
+.day-sheet { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); margin-top: 12px; padding: 16px; }
+.day-sheet-title { font-family: var(--font-head); font-size: 17px; margin-bottom: 12px; }
+.day-entry { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.day-entry:last-child { border-bottom: none; }
+.day-entry-emoji { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+.day-entry-info { flex: 1; }
+.day-entry-name { font-size: 14px; font-weight: 500; }
+.day-entry-note { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.day-entry-status { font-size: 11px; border-radius: 6px; padding: 2px 7px; font-weight: 500; white-space: nowrap; }
+.day-entry-status.done { background: var(--accent-light); color: var(--accent); }
+.day-entry-status.missed { background: var(--red-light); color: var(--red); }
+.day-entry-status.due { background: var(--yellow-light); color: var(--yellow); }
 
-  /* Modal */
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; backdrop-filter: blur(2px); align-items: flex-end; justify-content: center; }
-  .overlay.open { display: flex; }
-  .modal { background: var(--card); width: 100%; max-width: 430px; border-radius: 24px 24px 0 0; padding: 24px 24px 40px; max-height: 90vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
-  .overlay.open .modal { transform: translateY(0); }
-  .panel-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
-  .modal-title { font-family: var(--font-head); font-size: 22px; margin-bottom: 20px; }
-  .field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; }
-  .field-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; }
-  .field-input:focus { border-color: var(--accent); }
-  .freq-options { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-  .freq-btn { padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; cursor: pointer; background: var(--bg); transition: all 0.15s; }
-  .freq-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .day-options { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-  .day-btn { padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; background: var(--bg); transition: all 0.15s; }
-  .day-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
-  .btn-primary:active { opacity: 0.85; }
+/* Log */
+.log-filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.log-search { flex: 1; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 14px; background: var(--card); color: var(--text); outline: none; transition: border-color 0.15s; }
+.log-search:focus { border-color: var(--accent); }
+.log-entry {
+  background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+  padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px;
+}
+.log-emoji { font-size: 20px; flex-shrink: 0; }
+.log-info { flex: 1; }
+.log-name { font-weight: 500; font-size: 15px; }
+.log-date { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.log-note { font-size: 13px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+.log-del-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; border-radius: 6px; transition: color 0.15s; }
+.log-del-btn:hover { color: var(--red); }
 
-  /* Toast */
-  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
-  .toast.show { opacity: 1; }
+/* Manage */
+.manage-item {
+  background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+  padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+}
+.manage-item.archived { opacity: 0.5; }
+.drag-handle { cursor: grab; color: var(--border); flex-shrink: 0; touch-action: none; }
+.drag-handle:active { cursor: grabbing; }
+.manage-emoji { font-size: 20px; flex-shrink: 0; }
+.manage-info { flex: 1; min-width: 0; }
+.manage-name { font-weight: 500; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.manage-freq { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.manage-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.small-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; font-family: var(--font-body); }
+.small-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.small-btn.danger:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+.manage-filter-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.filter-btn { padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 12px; cursor: pointer; background: var(--bg); transition: all 0.15s; font-family: var(--font-body); }
+.filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Upcoming section */
+.upcoming-section { margin-top: 20px; }
+.upcoming-item {
+  background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+  padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; opacity: 0.75;
+}
+.upcoming-days { font-size: 12px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+
+/* Empty state */
+.empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-text { font-size: 15px; line-height: 1.5; }
+
+/* FAB */
+.fab {
+  position: fixed; bottom: 28px; right: 50%;
+  transform: translateX(calc(50% + 175px));
+  width: 56px; height: 56px; border-radius: 18px;
+  background: var(--accent); color: #fff;
+  border: none; font-size: 26px; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(196,113,74,0.45);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 10;
+}
+.fab:active { transform: translateX(calc(50% + 175px)) scale(0.93); }
+@media (max-width: 430px) {
+  .fab { right: 20px; transform: none; }
+  .fab:active { transform: scale(0.93); }
+}
+
+/* Overlay / Modal */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; backdrop-filter: blur(2px); align-items: flex-end; justify-content: center; }
+.overlay.open { display: flex; }
+.modal { background: var(--card); width: 100%; max-width: 430px; border-radius: 24px 24px 0 0; padding: 24px 24px 40px; max-height: 90vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+.overlay.open .modal { transform: translateY(0); }
+.panel-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-family: var(--font-head); font-size: 22px; margin-bottom: 20px; }
+.field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; }
+.field-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; }
+.field-input:focus { border-color: var(--accent); }
+.field-row { display: flex; gap: 12px; margin-bottom: 16px; }
+.field-row .field-group { flex: 1; }
+.field-group .field-input { margin-bottom: 0; }
+.field-select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; appearance: none; cursor: pointer; }
+.field-select:focus { border-color: var(--accent); }
+.type-options { display: flex; gap: 8px; margin-bottom: 16px; }
+.type-btn { flex: 1; padding: 10px; text-align: center; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; background: var(--bg); transition: all 0.15s; }
+.type-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.freq-options { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.freq-btn { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 12px; cursor: pointer; background: var(--bg); transition: all 0.15s; font-family: var(--font-body); }
+.freq-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.day-options { display: flex; gap: 5px; margin-bottom: 16px; flex-wrap: wrap; }
+.day-btn { width: 36px; height: 36px; border: 1.5px solid var(--border); border-radius: 50%; font-size: 11px; cursor: pointer; background: var(--bg); transition: all 0.15s; display: flex; align-items: center; justify-content: center; font-weight: 500; font-family: var(--font-body); }
+.day-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.priority-options { display: flex; gap: 8px; margin-bottom: 16px; }
+.priority-btn { flex: 1; padding: 8px; text-align: center; border: 1.5px solid var(--border); border-radius: 10px; font-size: 12px; font-weight: 500; cursor: pointer; background: var(--bg); transition: all 0.15s; font-family: var(--font-body); }
+.priority-btn.active.high { background: var(--red-light); border-color: var(--red); color: var(--red); }
+.priority-btn.active.medium { background: var(--yellow-light); border-color: var(--yellow); color: var(--yellow); }
+.priority-btn.active.low { background: var(--green-light); border-color: var(--green); color: var(--green); }
+.btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; margin-top: 4px; }
+.btn-primary:active { opacity: 0.85; }
+.btn-secondary { width: 100%; background: none; color: var(--text-muted); border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-family: var(--font-body); font-size: 14px; cursor: pointer; margin-top: 8px; transition: all 0.15s; }
+.btn-secondary:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+.interval-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.interval-input { width: 70px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; text-align: center; }
+.interval-input:focus { border-color: var(--accent); }
+.interval-unit { font-size: 13px; color: var(--text-muted); }
+.hidden { display: none !important; }
+.modal-section-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; margin-top: 4px; display: block; }
+
+/* Toast */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+
+/* Tab views */
+.tab-view { display: none; }
+.tab-view.active { display: block; }
 </style>
 </head>
 <body>
 <div class="container">
+
+  <!-- Nav -->
   <div class="nav">
     <a class="back-btn" href="index.html">
       <i data-lucide="arrow-left" width="18" height="18"></i> Back
     </a>
     <div class="page-title">Chores</div>
     <div class="nav-right">
-      <button class="icon-btn" onclick="setTab('manage')" title="Manage habits"><i data-lucide="settings-2" width="16" height="16"></i></button>
+      <button class="icon-btn" onclick="setTab('manage')" title="Manage"><i data-lucide="settings-2" width="16" height="16"></i></button>
     </div>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-val" id="statBestStreak">0</div><div class="stat-lbl">Best streak</div></div>
-    <div class="stat-card"><div class="stat-val" id="statMonthTotal">0</div><div class="stat-lbl">This month</div></div>
-    <div class="stat-card"><div class="stat-val" id="statWeekRate">0%</div><div class="stat-lbl">Week rate</div></div>
   </div>
 
   <!-- Tabs -->
   <div class="tabs">
-    <div class="tab active" onclick="setTab('today')" id="tabToday">Today</div>
-    <div class="tab" onclick="setTab('week')" id="tabWeek">This week</div>
-    <div class="tab" onclick="setTab('manage')" id="tabManage">Manage</div>
+    <div class="tab active" onclick="setTab('today')">Today</div>
+    <div class="tab" onclick="setTab('calendar')">Calendar</div>
+    <div class="tab" onclick="setTab('log')">Log</div>
+    <div class="tab" onclick="setTab('manage')">Manage</div>
   </div>
 
-  <div id="viewToday"></div>
-  <div id="viewWeek" style="display:none"></div>
-  <div id="viewManage" style="display:none"></div>
-</div>
+  <!-- Stats strip -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="statStreak">—</div><div class="stat-lbl">Best Streak</div></div>
+    <div class="stat-card"><div class="stat-val" id="statMonth">0</div><div class="stat-lbl">This Month</div></div>
+    <div class="stat-card"><div class="stat-val" id="statRate">—</div><div class="stat-lbl">Week Rate</div></div>
+  </div>
 
-<button class="fab" onclick="openAddModal()" id="fabBtn" title="Add habit">+</button>
+  <!-- TODAY TAB -->
+  <div class="tab-view active" id="viewToday">
+    <div id="overdueBanner" class="overdue-banner hidden">
+      <i data-lucide="alert-circle" width="16" height="16"></i>
+      <span id="overdueBannerText"></span>
+    </div>
+    <div id="todayOverdue"></div>
+    <div id="todayDue"></div>
+    <div id="upcomingSection" class="upcoming-section hidden">
+      <div class="section-label">Coming Up</div>
+      <div id="todayUpcoming"></div>
+    </div>
+  </div>
 
-<!-- Add/Edit modal -->
-<div class="overlay" id="habitOverlay" onclick="closeOverlayIfOutside(event, 'habitOverlay')">
+  <!-- CALENDAR TAB -->
+  <div class="tab-view" id="viewCalendar">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="calPrev()"><i data-lucide="chevron-left" width="16" height="16"></i></button>
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <button class="cal-nav-btn" onclick="calNext()"><i data-lucide="chevron-right" width="16" height="16"></i></button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div id="daySheet"></div>
+  </div>
+
+  <!-- LOG TAB -->
+  <div class="tab-view" id="viewLog">
+    <div class="log-filter-row">
+      <input class="log-search" id="logSearch" type="text" placeholder="Filter by name or category…" oninput="renderLog()">
+    </div>
+    <div id="logList"></div>
+  </div>
+
+  <!-- MANAGE TAB -->
+  <div class="tab-view" id="viewManage">
+    <div class="manage-filter-row">
+      <button class="filter-btn active" data-mf="active" onclick="setManageFilter('active', this)">Active</button>
+      <button class="filter-btn" data-mf="archived" onclick="setManageFilter('archived', this)">Archived</button>
+      <button class="filter-btn" data-mf="all" onclick="setManageFilter('all', this)">All</button>
+    </div>
+    <div id="manageList"></div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" onclick="openAddModal()">
+  <i data-lucide="plus" width="26" height="26"></i>
+</button>
+
+<!-- Chore Modal -->
+<div class="overlay" id="choreOverlay" onclick="overlayClickOutside(event,'choreOverlay')">
   <div class="modal">
     <div class="panel-handle"></div>
     <div class="modal-title" id="modalTitle">New Chore</div>
+
     <input type="hidden" id="editId">
-    <label class="field-label">Chore name</label>
-    <input class="field-input" id="habitName" type="text" placeholder="e.g. Morning run" maxlength="50">
-    <label class="field-label">Icon (emoji)</label>
-    <input class="field-input" id="habitEmoji" type="text" placeholder="🏃" maxlength="4">
-    <label class="field-label">Frequency</label>
-    <div class="freq-options">
-      <div class="freq-btn active" data-freq="daily" onclick="setFreq('daily')">Daily</div>
-      <div class="freq-btn" data-freq="weekly" onclick="setFreq('weekly')">Specific days</div>
-    </div>
-    <div id="dayPicker" style="display:none">
-      <label class="field-label">Days</label>
-      <div class="day-options">
-        <div class="day-btn" data-day="mon" onclick="toggleDay('mon')">Mon</div>
-        <div class="day-btn" data-day="tue" onclick="toggleDay('tue')">Tue</div>
-        <div class="day-btn" data-day="wed" onclick="toggleDay('wed')">Wed</div>
-        <div class="day-btn" data-day="thu" onclick="toggleDay('thu')">Thu</div>
-        <div class="day-btn" data-day="fri" onclick="toggleDay('fri')">Fri</div>
-        <div class="day-btn" data-day="sat" onclick="toggleDay('sat')">Sat</div>
-        <div class="day-btn" data-day="sun" onclick="toggleDay('sun')">Sun</div>
+
+    <label class="field-label">Name</label>
+    <input class="field-input" id="choreName" type="text" placeholder="e.g. Clean bathroom" maxlength="60">
+
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Emoji</label>
+        <input class="field-input" id="choreEmoji" type="text" placeholder="🧹" maxlength="2">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Category</label>
+        <input class="field-input" id="choreCategory" type="text" placeholder="Home" maxlength="30">
       </div>
     </div>
-    <button class="btn-primary" onclick="saveHabit()">Save Habit</button>
+
+    <label class="field-label">Type</label>
+    <div class="type-options">
+      <div class="type-btn active" id="typeRecurring" onclick="setType('recurring')">🔄 Recurring</div>
+      <div class="type-btn" id="typeOnetime" onclick="setType('one-time')">☑️ One-time</div>
+    </div>
+
+    <!-- Recurring options -->
+    <div id="recurringOptions">
+      <label class="field-label">Frequency</label>
+      <div class="freq-options">
+        <button class="freq-btn active" data-freq="daily" onclick="setFreq('daily')">Daily</button>
+        <button class="freq-btn" data-freq="weekly" onclick="setFreq('weekly')">Weekly</button>
+        <button class="freq-btn" data-freq="interval" onclick="setFreq('interval')">Every N days</button>
+        <button class="freq-btn" data-freq="monthly" onclick="setFreq('monthly')">Monthly</button>
+      </div>
+      <div id="dayPicker" class="hidden">
+        <label class="field-label">Days</label>
+        <div class="day-options">
+          <button class="day-btn" data-day="Sun" onclick="toggleDay('Sun')">S</button>
+          <button class="day-btn" data-day="Mon" onclick="toggleDay('Mon')">M</button>
+          <button class="day-btn" data-day="Tue" onclick="toggleDay('Tue')">T</button>
+          <button class="day-btn" data-day="Wed" onclick="toggleDay('Wed')">W</button>
+          <button class="day-btn" data-day="Thu" onclick="toggleDay('Thu')">T</button>
+          <button class="day-btn" data-day="Fri" onclick="toggleDay('Fri')">F</button>
+          <button class="day-btn" data-day="Sat" onclick="toggleDay('Sat')">S</button>
+        </div>
+      </div>
+      <div id="intervalPicker" class="hidden">
+        <label class="field-label">Repeat every</label>
+        <div class="interval-row">
+          <input class="interval-input" id="intervalDays" type="number" min="1" max="365" value="7">
+          <span class="interval-unit">days</span>
+        </div>
+      </div>
+      <div id="monthlyPicker" class="hidden">
+        <label class="field-label">Day of month</label>
+        <input class="field-input" id="monthlyDay" type="number" min="1" max="31" placeholder="e.g. 1" style="margin-bottom:16px">
+      </div>
+    </div>
+
+    <!-- One-time options -->
+    <div id="onetimeOptions" class="hidden">
+      <label class="field-label">Due date</label>
+      <input class="field-input" id="choreOnce" type="date">
+    </div>
+
+    <label class="field-label">Priority</label>
+    <div class="priority-options">
+      <button class="priority-btn active low" data-pri="low" onclick="setPriority('low')">Low</button>
+      <button class="priority-btn medium" data-pri="medium" onclick="setPriority('medium')">Medium</button>
+      <button class="priority-btn high" data-pri="high" onclick="setPriority('high')">High</button>
+    </div>
+
+    <label class="field-label">Notes (optional)</label>
+    <textarea class="field-input" id="choreNotes" rows="2" placeholder="Any extra details…" style="resize:none;margin-bottom:16px"></textarea>
+
+    <button class="btn-primary" onclick="saveChore()">Save</button>
+    <button class="btn-secondary" id="archiveBtn" onclick="archiveChore()" style="display:none">Archive this chore</button>
+    <button class="btn-secondary" id="deleteBtn" onclick="deleteChoreModal()" style="color:var(--red)">Delete</button>
   </div>
 </div>
 
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-  if(window.lucide) lucide.createIcons();
+// ── Data helpers ────────────────────────────────────────────────────────────
+const KEY = 'lifetracker_v1_chores';
 
-  let currentFreq = 'daily';
-  let selectedDays = [];
-  let currentTab = 'today';
+function getData() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return defaultData();
+    const parsed = JSON.parse(raw);
+    return parsed.version === 2 ? parsed : migrate(parsed);
+  } catch(e) { return defaultData(); }
+}
 
-  function getData() {
-    try {
-      return JSON.parse(localStorage.getItem('lifetracker_v1_chores') || '{"chores":[],"completions":{}}');
-    } catch(e) { return { habits: [], completions: {} }; }
+function defaultData() {
+  return { version: 2, chores: [], completions: {}, order: [] };
+}
+
+function migrate(old) {
+  // v1 had: { habits: [...], completions: { 'YYYY-MM-DD': [id, ...] } }
+  const data = defaultData();
+  const now = todayKey();
+  if (old.habits) {
+    data.chores = old.habits.map(h => ({
+      id: h.id || uid(),
+      name: h.name || 'Unnamed',
+      emoji: h.emoji || '',
+      category: '',
+      type: 'recurring',
+      frequency: h.frequency === 'weekly' ? 'weekly' : 'daily',
+      days: h.days || [],
+      intervalDays: 7,
+      monthlyDay: 1,
+      priority: 'medium',
+      notes: '',
+      created: now,
+      due: null,
+      lastCompleted: null,
+      active: true
+    }));
   }
-  function saveData(data) {
-    try {
-      localStorage.setItem('lifetracker_v1_chores', JSON.stringify(data));
-    } catch(e) { showToast('Storage full!'); }
-  }
-
-  function todayKey() { return new Date().toISOString().slice(0, 10); }
-  function dateKey(d) { return d.toISOString().slice(0, 10); }
-
-  function isScheduledToday(h, d) {
-    if (h.frequency === 'daily') return true;
-    const day = d.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase().slice(0,3);
-    return (h.days || []).includes(day);
-  }
-
-  function calcStreak(h, completions) {
-    let streak = 0;
-    let d = new Date();
-    for (let i = 0; i < 365; i++) {
-      if (!isScheduledToday(h, d)) { d.setDate(d.getDate() - 1); continue; }
-      const key = dateKey(d);
-      if ((completions[key] || []).includes(h.id)) streak++;
-      else break;
-      d.setDate(d.getDate() - 1);
-    }
-    return streak;
-  }
-
-  function calcBestStreak(h, completions) {
-    let best = 0, cur = 0;
-    let d = new Date();
-    for (let i = 0; i < 365; i++) {
-      if (!isScheduledToday(h, d)) { d.setDate(d.getDate() - 1); continue; }
-      const key = dateKey(d);
-      if ((completions[key] || []).includes(h.id)) { cur++; best = Math.max(best, cur); }
-      else cur = 0;
-      d.setDate(d.getDate() - 1);
-    }
-    return best;
-  }
-
-  function setTab(tab) {
-    currentTab = tab;
-    ['today','week','manage'].forEach(t => {
-      document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
-      document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? '' : 'none';
-    });
-    document.getElementById('fabBtn').style.display = tab === 'manage' ? 'flex' : 'none';
-    if (tab === 'today') renderToday();
-    else if (tab === 'week') renderWeek();
-    else renderManage();
-  }
-
-  function renderToday() {
-    const data = getData();
-    const today = new Date();
-    const key = todayKey();
-    const completed = data.completions[key] || [];
-    const scheduled = data.habits.filter(h => isScheduledToday(h, today));
-    const el = document.getElementById('viewToday');
-
-    if (scheduled.length === 0) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">🌱</div><div class="empty-text">No habits for today.<br>Add some in the Manage tab.</div></div>`;
-      return;
-    }
-
-    el.innerHTML = scheduled.map(h => {
-      const done = completed.includes(h.id);
-      const streak = calcStreak(h, data.completions);
-      return `<div class="habit-item${done ? ' done' : ''}" onclick="toggleHabit('${h.id}')">
-        <div class="habit-check">${done ? '<i data-lucide="check" width="14" height="14" style="color:#fff"></i>' : ''}</div>
-        <div class="habit-icon">${h.emoji || '✨'}</div>
-        <div class="habit-info">
-          <div class="habit-name">${h.name}</div>
-          <div class="habit-meta">${done ? 'Done!' : 'Tap to complete'}</div>
-        </div>
-        <div class="habit-streak">${streak > 0 ? '🔥' + streak : ''}</div>
-      </div>`;
-    }).join('');
-    if(window.lucide) lucide.createIcons();
-  }
-
-  function renderWeek() {
-    const data = getData();
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push(d);
-    }
-    const el = document.getElementById('viewWeek');
-    if (data.habits.length === 0) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No chores yet. Add some first!</div></div>`;
-      return;
-    }
-
-    const todayStr = todayKey();
-    const dayNames = days.map(d => d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0,1));
-
-    let html = `<div class="section-label">Last 7 days</div><div class="week-grid">
-      <div class="week-header">
-        <div></div>
-        ${dayNames.map((d,i) => `<div class="week-header-cell">${d}</div>`).join('')}
-      </div>`;
-
-    for (const h of data.habits) {
-      html += `<div class="week-row">
-        <div class="week-habit-name"><span>${h.emoji || '✨'}</span>${h.name}</div>
-        ${days.map(d => {
-          const key = dateKey(d);
-          const done = (data.completions[key] || []).includes(h.id);
-          const isToday = key === todayStr;
-          const scheduled = isScheduledToday(h, d);
-          return `<div class="week-cell${done ? ' done' : ''}${isToday ? ' today-col' : ''}${!scheduled ? ' unscheduled' : ''}"></div>`;
-        }).join('')}
-      </div>`;
-    }
-    html += '</div>';
-    el.innerHTML = html;
-  }
-
-  function renderManage() {
-    const data = getData();
-    const el = document.getElementById('viewManage');
-    if (data.habits.length === 0) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">No chores yet.<br>Tap + to add your first habit.</div></div>`;
-      return;
-    }
-    el.innerHTML = data.habits.map(h => `
-      <div class="manage-habit-item">
-        <div class="manage-habit-icon">${h.emoji || '✨'}</div>
-        <div class="manage-habit-info">
-          <div class="manage-habit-name">${h.name}</div>
-          <div class="manage-habit-freq">${h.frequency === 'daily' ? 'Every day' : (h.days || []).join(', ')}</div>
-        </div>
-        <div class="manage-btns">
-          <button class="small-btn" onclick="editHabit('${h.id}')">Edit</button>
-          <button class="small-btn danger" onclick="deleteHabit('${h.id}')">Delete</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function updateStats() {
-    const data = getData();
-    // Best streak
-    let best = 0;
-    for (const h of data.habits) { const s = calcBestStreak(h, data.completions); if (s > best) best = s; }
-    document.getElementById('statBestStreak').textContent = best + 'd';
-
-    // This month completions
-    const now = new Date();
-    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    let monthTotal = 0;
-    for (const [key, ids] of Object.entries(data.completions)) {
-      if (key.startsWith(monthPrefix)) monthTotal += ids.length;
-    }
-    document.getElementById('statMonthTotal').textContent = monthTotal;
-
-    // Week rate
-    let scheduled = 0, done = 0;
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      const key = dateKey(d);
-      const comp = data.completions[key] || [];
-      for (const h of data.habits) {
-        if (isScheduledToday(h, d)) { scheduled++; if (comp.includes(h.id)) done++; }
+  // Migrate completions: old format { 'YYYY-MM-DD': [id, id] } → new { 'YYYY-MM-DD': [{id, note:''}] }
+  if (old.completions) {
+    for (const [date, ids] of Object.entries(old.completions)) {
+      if (Array.isArray(ids)) {
+        data.completions[date] = ids.map(id => ({ id, note: '' }));
       }
     }
-    document.getElementById('statWeekRate').textContent = scheduled ? Math.round(done/scheduled*100) + '%' : '0%';
   }
+  data.order = data.chores.map(c => c.id);
+  saveData(data);
+  return data;
+}
 
-  function toggleHabit(id) {
-    const data = getData();
-    const key = todayKey();
-    if (!data.completions[key]) data.completions[key] = [];
-    const idx = data.completions[key].indexOf(id);
-    if (idx >= 0) data.completions[key].splice(idx, 1);
-    else data.completions[key].push(id);
-    saveData(data);
-    renderToday();
-    updateStats();
-    showToast(idx >= 0 ? 'Unmarked' : 'Habit completed! ✓');
+function saveData(data) {
+  localStorage.setItem(KEY, JSON.stringify(data));
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function parseDate(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+// ── Due date logic ──────────────────────────────────────────────────────────
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function getNextDue(chore, fromDate) {
+  // fromDate is a Date object. Returns a Date (or null for daily/always-due).
+  const base = fromDate || new Date();
+  if (chore.type === 'one-time') {
+    return chore.due ? parseDate(chore.due) : null;
   }
-
-  function openAddModal() {
-    document.getElementById('editId').value = '';
-    document.getElementById('modalTitle').textContent = 'New Chore';
-    document.getElementById('habitName').value = '';
-    document.getElementById('habitEmoji').value = '';
-    setFreq('daily');
-    selectedDays = [];
-    document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('habitOverlay').classList.add('open');
-  }
-
-  function editHabit(id) {
-    const data = getData();
-    const h = data.habits.find(x => x.id === id);
-    if (!h) return;
-    document.getElementById('editId').value = id;
-    document.getElementById('modalTitle').textContent = 'Edit Chore';
-    document.getElementById('habitName').value = h.name;
-    document.getElementById('habitEmoji').value = h.emoji || '';
-    setFreq(h.frequency || 'daily');
-    selectedDays = h.days || [];
-    document.querySelectorAll('.day-btn').forEach(b => {
-      b.classList.toggle('active', selectedDays.includes(b.dataset.day));
-    });
-    document.getElementById('habitOverlay').classList.add('open');
-    setTab('manage');
-  }
-
-  function deleteHabit(id) {
-    if (!confirm('Delete this chore? All history will be lost.')) return;
-    const data = getData();
-    data.habits = data.habits.filter(h => h.id !== id);
-    saveData(data);
-    renderManage();
-    updateStats();
-    showToast('Chore deleted');
-  }
-
-  function saveHabit() {
-    const name = document.getElementById('habitName').value.trim();
-    if (!name) { showToast('Please enter a name'); return; }
-    const data = getData();
-    const editId = document.getElementById('editId').value;
-    const id = editId || Date.now().toString(36);
-    const habit = {
-      id,
-      name,
-      emoji: document.getElementById('habitEmoji').value.trim() || '✨',
-      frequency: currentFreq,
-      days: currentFreq === 'weekly' ? selectedDays : []
-    };
-
-    if (!editId && data.habits.length >= 10) { showToast('Max 10 habits'); return; }
-
-    if (editId) {
-      const idx = data.habits.findIndex(h => h.id === editId);
-      if (idx >= 0) data.habits[idx] = habit;
-    } else {
-      data.habits.push(habit);
+  if (chore.frequency === 'daily') return null; // always due
+  if (chore.frequency === 'weekly') {
+    if (!chore.days || chore.days.length === 0) return null;
+    // find next occurrence among selected days
+    for (let i = 0; i < 8; i++) {
+      const d = new Date(base); d.setDate(base.getDate() + i);
+      if (chore.days.includes(DAY_NAMES[d.getDay()])) return d;
     }
-    saveData(data);
-    document.getElementById('habitOverlay').classList.remove('open');
-    showToast(editId ? 'Chore updated' : 'Chore added!');
-    setTab('today');
-    updateStats();
+    return null;
   }
-
-  function setFreq(f) {
-    currentFreq = f;
-    document.querySelectorAll('.freq-btn').forEach(b => b.classList.toggle('active', b.dataset.freq === f));
-    document.getElementById('dayPicker').style.display = f === 'weekly' ? '' : 'none';
+  if (chore.frequency === 'interval') {
+    if (!chore.lastCompleted) return base; // due today if never done
+    const last = parseDate(chore.lastCompleted);
+    const next = new Date(last); next.setDate(last.getDate() + (chore.intervalDays || 7));
+    return next;
   }
-
-  function toggleDay(d) {
-    const idx = selectedDays.indexOf(d);
-    if (idx >= 0) selectedDays.splice(idx, 1);
-    else selectedDays.push(d);
-    document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', selectedDays.includes(b.dataset.day)));
+  if (chore.frequency === 'monthly') {
+    const day = chore.monthlyDay || 1;
+    const d = new Date(base.getFullYear(), base.getMonth(), day);
+    if (d < base) d.setMonth(d.getMonth() + 1);
+    return d;
   }
+  return null;
+}
 
-  function closeOverlayIfOutside(e, id) {
-    if (e.target === document.getElementById(id)) document.getElementById(id).classList.remove('open');
+function isDueOn(chore, dateObj) {
+  const key = dateKey(dateObj);
+  if (!chore.active) return false;
+  if (chore.type === 'one-time') {
+    return chore.due === key && !chore.lastCompleted;
   }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+  if (chore.frequency === 'daily') return true;
+  if (chore.frequency === 'weekly') {
+    return (chore.days || []).includes(DAY_NAMES[dateObj.getDay()]);
   }
+  if (chore.frequency === 'interval') {
+    if (!chore.lastCompleted) return true;
+    const last = parseDate(chore.lastCompleted);
+    const diff = Math.floor((dateObj - last) / 86400000);
+    return diff >= (chore.intervalDays || 7);
+  }
+  if (chore.frequency === 'monthly') {
+    return dateObj.getDate() === (chore.monthlyDay || 1);
+  }
+  return false;
+}
 
-  // Init
-  document.getElementById('fabBtn').style.display = 'none';
+function isDoneOn(chore, dateKey, completions) {
+  const entries = completions[dateKey] || [];
+  return entries.some(e => e.id === chore.id);
+}
+
+function daysDiff(d1, d2) {
+  return Math.floor((d2 - d1) / 86400000);
+}
+
+function priorityOrder(p) {
+  if (p === 'high') return 0;
+  if (p === 'medium') return 1;
+  return 2;
+}
+
+// ── State ───────────────────────────────────────────────────────────────────
+let currentTab = 'today';
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calSelectedDay = null;
+let currentFreq = 'daily';
+let selectedDays = [];
+let currentPriority = 'low';
+let currentType = 'recurring';
+let manageFilter = 'active';
+
+// ── Tab switching ───────────────────────────────────────────────────────────
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['today','calendar','log','manage'];
+    t.classList.toggle('active', names[i] === tab);
+  });
+  document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  if (tab === 'today') renderToday();
+  if (tab === 'calendar') renderCalendar();
+  if (tab === 'log') renderLog();
+  if (tab === 'manage') renderManage();
   updateStats();
-  setTab('today');
+  if (window.lucide) lucide.createIcons();
+}
+
+// ── TODAY ───────────────────────────────────────────────────────────────────
+function renderToday() {
+  const data = getData();
+  const today = new Date();
+  const tk = todayKey();
+
+  const overdue = [], dueToday = [], upcoming = [];
+
+  for (const chore of data.chores) {
+    if (!chore.active) continue;
+    if (chore.type === 'one-time' && chore.lastCompleted) continue;
+    const doneTodayAlready = isDoneOn(chore, tk, data.completions);
+
+    if (chore.type === 'one-time' && chore.due) {
+      const dueDate = parseDate(chore.due);
+      const diff = daysDiff(today, dueDate);
+      if (diff < 0 && !doneTodayAlready) overdue.push({ chore, daysOver: -diff });
+      else if (diff === 0) dueToday.push({ chore, doneTodayAlready });
+      else if (diff > 0 && diff <= 7) upcoming.push({ chore, daysAway: diff });
+    } else if (chore.type === 'recurring') {
+      if (chore.frequency === 'daily') {
+        dueToday.push({ chore, doneTodayAlready });
+      } else if (chore.frequency === 'weekly') {
+        const days = chore.days || [];
+        if (days.includes(DAY_NAMES[today.getDay()])) {
+          dueToday.push({ chore, doneTodayAlready });
+        } else {
+          // find next occurrence
+          let daysAway = null;
+          for (let i = 1; i <= 7; i++) {
+            const nd = new Date(today); nd.setDate(today.getDate() + i);
+            if (days.includes(DAY_NAMES[nd.getDay()])) { daysAway = i; break; }
+          }
+          if (daysAway !== null && daysAway <= 7) upcoming.push({ chore, daysAway });
+        }
+      } else if (chore.frequency === 'interval') {
+        const interval = chore.intervalDays || 7;
+        if (!chore.lastCompleted) {
+          dueToday.push({ chore, doneTodayAlready });
+        } else {
+          const last = parseDate(chore.lastCompleted);
+          const diff = daysDiff(last, today);
+          if (diff >= interval) dueToday.push({ chore, doneTodayAlready });
+          else if (diff > 0 && (interval - diff) <= 7) upcoming.push({ chore, daysAway: interval - diff });
+        }
+      } else if (chore.frequency === 'monthly') {
+        if (today.getDate() === (chore.monthlyDay || 1)) {
+          dueToday.push({ chore, doneTodayAlready });
+        } else {
+          let next = new Date(today.getFullYear(), today.getMonth(), chore.monthlyDay || 1);
+          if (next <= today) next.setMonth(next.getMonth() + 1);
+          const daysAway = daysDiff(today, next);
+          if (daysAway <= 7) upcoming.push({ chore, daysAway });
+        }
+      }
+    }
+  }
+
+  // Sort: overdue by priority then days overdue; due by priority; upcoming by daysAway
+  const sortByPri = (a, b) => priorityOrder(a.chore.priority) - priorityOrder(b.chore.priority);
+  overdue.sort(sortByPri);
+  dueToday.sort(sortByPri);
+  upcoming.sort((a, b) => a.daysAway - b.daysAway || sortByPri(a, b));
+
+  // Banner
+  const banner = document.getElementById('overdueBanner');
+  const bannerText = document.getElementById('overdueBannerText');
+  if (overdue.length > 0) {
+    banner.classList.remove('hidden');
+    bannerText.textContent = `${overdue.length} overdue item${overdue.length > 1 ? 's' : ''} need attention`;
+  } else {
+    banner.classList.add('hidden');
+  }
+
+  // Overdue
+  const odEl = document.getElementById('todayOverdue');
+  if (overdue.length > 0) {
+    odEl.innerHTML = `<div class="section-label"><span>Overdue</span><span class="section-label-badge">${overdue.length}</span></div>` +
+      overdue.map(({ chore, daysOver }) => choreItemHTML(chore, tk, data.completions, daysOver, 0, true)).join('');
+  } else {
+    odEl.innerHTML = '';
+  }
+
+  // Due today
+  const dtEl = document.getElementById('todayDue');
+  if (dueToday.length > 0) {
+    dtEl.innerHTML = `<div class="section-label" style="margin-top:${overdue.length?'16px':'0'}"><span>Today</span></div>` +
+      dueToday.map(({ chore, doneTodayAlready }) => choreItemHTML(chore, tk, data.completions, 0, 0, false)).join('');
+  } else if (overdue.length === 0) {
+    dtEl.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Nothing due today!<br>Tap + to add a chore.</div></div>`;
+  } else {
+    dtEl.innerHTML = '';
+  }
+
+  // Upcoming
+  const upEl = document.getElementById('todayUpcoming');
+  const upSec = document.getElementById('upcomingSection');
+  if (upcoming.length > 0) {
+    upSec.classList.remove('hidden');
+    upEl.innerHTML = upcoming.map(({ chore, daysAway }) => `
+      <div class="upcoming-item">
+        <span style="font-size:20px">${chore.emoji || '📋'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${chore.name}</div>
+          ${chore.category ? `<div class="chore-meta"><span class="chore-cat">${chore.category}</span></div>` : ''}
+        </div>
+        <span class="upcoming-days">in ${daysAway} day${daysAway>1?'s':''}</span>
+      </div>
+    `).join('');
+  } else {
+    upSec.classList.add('hidden');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function choreItemHTML(chore, tk, completions, daysOver, daysAway, isOverdue) {
+  const done = isDoneOn(chore, tk, completions);
+  return `
+    <div class="chore-item ${isOverdue ? 'overdue' : ''} ${done ? 'done' : ''}" id="ci_${chore.id}">
+      <div class="chore-row" onclick="toggleExpand('${chore.id}', ${isOverdue})">
+        <div class="chore-check">
+          ${done ? '<i data-lucide="check" width="16" height="16" style="color:#fff"></i>' : ''}
+        </div>
+        <div class="chore-emoji">${chore.emoji || '📋'}</div>
+        <div class="chore-info">
+          <div class="chore-name" style="${done ? 'text-decoration:line-through;opacity:0.6' : ''}">${chore.name}</div>
+          <div class="chore-meta">
+            ${chore.category ? `<span class="chore-cat">${chore.category}</span>` : ''}
+            <span class="priority-dot ${chore.priority || 'medium'}"></span>
+            ${isOverdue && daysOver > 0 ? `<span class="chore-overdue-tag">${daysOver}d overdue</span>` : ''}
+            ${!isOverdue && !done ? '<span class="chore-upcoming-tag">Due today</span>' : ''}
+          </div>
+        </div>
+      </div>
+      <div class="completion-expand" id="exp_${chore.id}">
+        <textarea class="completion-note-input" id="note_${chore.id}" rows="2" placeholder="Add a note (optional)…"></textarea>
+        <div class="confirm-row">
+          <button class="confirm-btn primary" onclick="completeChore('${chore.id}')">✓ Mark Complete</button>
+          <button class="confirm-btn secondary" onclick="closeExpand('${chore.id}')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let expandedId = null;
+
+function toggleExpand(id, isOverdue) {
+  const data = getData();
+  const tk = todayKey();
+  const done = isDoneOn(data.chores.find(c => c.id === id), tk, data.completions);
+
+  if (done) {
+    // Undo completion
+    undoComplete(id);
+    return;
+  }
+
+  if (expandedId && expandedId !== id) closeExpand(expandedId);
+
+  const exp = document.getElementById(`exp_${id}`);
+  if (!exp) return;
+
+  if (exp.classList.contains('open')) {
+    closeExpand(id);
+  } else {
+    exp.classList.add('open');
+    expandedId = id;
+    const noteEl = document.getElementById(`note_${id}`);
+    if (noteEl) setTimeout(() => noteEl.focus(), 50);
+  }
+}
+
+function closeExpand(id) {
+  const exp = document.getElementById(`exp_${id}`);
+  if (exp) { exp.classList.remove('open'); const n = document.getElementById(`note_${id}`); if (n) n.value = ''; }
+  if (expandedId === id) expandedId = null;
+}
+
+function completeChore(id) {
+  const data = getData();
+  const tk = todayKey();
+  const chore = data.chores.find(c => c.id === id);
+  if (!chore) return;
+
+  const note = (document.getElementById(`note_${id}`) || {}).value || '';
+
+  if (!data.completions[tk]) data.completions[tk] = [];
+  data.completions[tk].push({ id, note });
+
+  chore.lastCompleted = tk;
+
+  // One-time: deactivate
+  if (chore.type === 'one-time') chore.active = false;
+
+  saveData(data);
+  showToast(`${chore.emoji || '✓'} ${chore.name} done!`);
+  renderToday();
+  updateStats();
+}
+
+function undoComplete(id) {
+  const data = getData();
+  const tk = todayKey();
+  if (data.completions[tk]) {
+    data.completions[tk] = data.completions[tk].filter(e => e.id !== id);
+    if (data.completions[tk].length === 0) delete data.completions[tk];
+  }
+  const chore = data.chores.find(c => c.id === id);
+  if (chore) { chore.lastCompleted = null; if (chore.type === 'one-time') chore.active = true; }
+  saveData(data);
+  showToast('Unmarked');
+  renderToday();
+  updateStats();
+}
+
+// ── CALENDAR ────────────────────────────────────────────────────────────────
+function renderCalendar() {
+  const data = getData();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthLabel').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+  const grid = document.getElementById('calGrid');
+  const headers = ['S','M','T','W','T','F','S'].map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+
+  let cells = headers;
+  for (let i = 0; i < firstDay; i++) {
+    cells += `<div class="cal-day other-month"></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calYear, calMonth, d);
+    const dk = dateKey(date);
+    const isToday = dateKey(date) === todayKey();
+    const isSelected = calSelectedDay === dk;
+
+    const compls = data.completions[dk] || [];
+    const hasDone = compls.length > 0;
+    const hasDue = data.chores.some(c => c.active && isDueOn(c, date));
+    const hasMissed = hasDue && !hasDone && date < today;
+
+    let dots = '';
+    if (hasDone) dots += `<div class="cal-dot completed"></div>`;
+    if (hasMissed) dots += `<div class="cal-dot overdue"></div>`;
+    else if (hasDue && !hasDone) dots += `<div class="cal-dot due"></div>`;
+
+    cells += `
+      <div class="cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalDay('${dk}')">
+        <span>${d}</span>
+        <div class="cal-dots">${dots}</div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = cells;
+  if (calSelectedDay) renderDaySheet(calSelectedDay);
+  if (window.lucide) lucide.createIcons();
+}
+
+function selectCalDay(dk) {
+  calSelectedDay = calSelectedDay === dk ? null : dk;
+  renderCalendar();
+}
+
+function renderDaySheet(dk) {
+  const data = getData();
+  const date = parseDate(dk);
+  const compls = data.completions[dk] || [];
+  const sheet = document.getElementById('daySheet');
+
+  const fmt = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  let rows = '';
+  const shownIds = new Set();
+
+  // Show completions
+  for (const entry of compls) {
+    const chore = data.chores.find(c => c.id === entry.id);
+    if (!chore) continue;
+    shownIds.add(entry.id);
+    rows += `
+      <div class="day-entry">
+        <div class="day-entry-emoji">${chore.emoji || '📋'}</div>
+        <div class="day-entry-info">
+          <div class="day-entry-name">${chore.name}</div>
+          ${entry.note ? `<div class="day-entry-note">"${entry.note}"</div>` : ''}
+        </div>
+        <div class="day-entry-status done">Done</div>
+      </div>
+    `;
+  }
+
+  // Show due but not done
+  for (const chore of data.chores) {
+    if (shownIds.has(chore.id)) continue;
+    if (!isDueOn(chore, date)) continue;
+    const missed = date < new Date() && dateKey(new Date()) !== dk;
+    rows += `
+      <div class="day-entry">
+        <div class="day-entry-emoji">${chore.emoji || '📋'}</div>
+        <div class="day-entry-info"><div class="day-entry-name">${chore.name}</div></div>
+        <div class="day-entry-status ${missed ? 'missed' : 'due'}">${missed ? 'Missed' : 'Due'}</div>
+      </div>
+    `;
+  }
+
+  if (!rows) rows = `<div style="color:var(--text-muted);font-size:14px;padding:8px 0">Nothing scheduled.</div>`;
+
+  sheet.innerHTML = `
+    <div class="day-sheet">
+      <div class="day-sheet-title">${fmt}</div>
+      ${rows}
+    </div>
+  `;
+}
+
+function calPrev() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  calSelectedDay = null;
+  document.getElementById('daySheet').innerHTML = '';
+  renderCalendar();
+}
+
+function calNext() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  calSelectedDay = null;
+  document.getElementById('daySheet').innerHTML = '';
+  renderCalendar();
+}
+
+// ── LOG ─────────────────────────────────────────────────────────────────────
+function renderLog() {
+  const data = getData();
+  const query = (document.getElementById('logSearch').value || '').toLowerCase();
+  const el = document.getElementById('logList');
+
+  // Flatten all completions
+  const entries = [];
+  for (const [date, compls] of Object.entries(data.completions)) {
+    for (const entry of compls) {
+      const chore = data.chores.find(c => c.id === entry.id);
+      if (!chore) continue;
+      if (query && !chore.name.toLowerCase().includes(query) && !(chore.category || '').toLowerCase().includes(query)) continue;
+      entries.push({ date, chore, note: entry.note, entryId: entry.id });
+    }
+  }
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+
+  if (entries.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No completions yet.</div></div>`;
+    return;
+  }
+
+  el.innerHTML = entries.map(({ date, chore, note, entryId }) => {
+    const d = parseDate(date);
+    const fmt = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    return `
+      <div class="log-entry">
+        <div class="log-emoji">${chore.emoji || '📋'}</div>
+        <div class="log-info">
+          <div class="log-name">${chore.name}</div>
+          <div class="log-date">${fmt}${chore.category ? ` · ${chore.category}` : ''}</div>
+          ${note ? `<div class="log-note">"${note}"</div>` : ''}
+        </div>
+        <button class="log-del-btn" onclick="deleteLogEntry('${date}', '${entryId}')" title="Delete entry">
+          <i data-lucide="trash-2" width="14" height="14"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function deleteLogEntry(date, choreId) {
+  if (!confirm('Delete this log entry?')) return;
+  const data = getData();
+  if (data.completions[date]) {
+    data.completions[date] = data.completions[date].filter(e => e.id !== choreId);
+    if (data.completions[date].length === 0) delete data.completions[date];
+  }
+  saveData(data);
+  renderLog();
+  updateStats();
+  showToast('Entry deleted');
+}
+
+// ── MANAGE ──────────────────────────────────────────────────────────────────
+let manageFilter2 = 'active';
+
+function setManageFilter(f, btn) {
+  manageFilter2 = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderManage();
+}
+
+function renderManage() {
+  const data = getData();
+  const el = document.getElementById('manageList');
+  let chores = data.chores;
+  if (manageFilter2 === 'active') chores = chores.filter(c => c.active);
+  else if (manageFilter2 === 'archived') chores = chores.filter(c => !c.active);
+
+  if (chores.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">Nothing here.<br>Tap + to add a chore.</div></div>`;
+    return;
+  }
+
+  el.innerHTML = chores.map(c => {
+    const freqLabel = freqDisplay(c);
+    return `
+      <div class="manage-item ${!c.active ? 'archived' : ''}" id="mi_${c.id}" draggable="true" ondragstart="dragStart(event,'${c.id}')" ondragover="dragOver(event)" ondrop="dragDrop(event,'${c.id}')">
+        <div class="drag-handle"><i data-lucide="grip-vertical" width="14" height="14"></i></div>
+        <div class="manage-emoji">${c.emoji || '📋'}</div>
+        <div class="manage-info">
+          <div class="manage-name">${c.name}</div>
+          <div class="manage-freq">${freqLabel}${c.category ? ` · ${c.category}` : ''}</div>
+        </div>
+        <div class="manage-btns">
+          <button class="small-btn" onclick="editChore('${c.id}')">Edit</button>
+          <button class="small-btn danger" onclick="deleteChore('${c.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function freqDisplay(c) {
+  if (c.type === 'one-time') return `One-time${c.due ? ' · Due ' + c.due : ''}`;
+  if (c.frequency === 'daily') return 'Every day';
+  if (c.frequency === 'weekly') return `Weekly: ${(c.days||[]).join(', ') || 'no days set'}`;
+  if (c.frequency === 'interval') return `Every ${c.intervalDays || 7} days`;
+  if (c.frequency === 'monthly') return `Monthly on day ${c.monthlyDay || 1}`;
+  return c.frequency;
+}
+
+// ── Drag to reorder ─────────────────────────────────────────────────────────
+let dragSrcId = null;
+
+function dragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function dragDrop(e, targetId) {
+  e.preventDefault();
+  if (dragSrcId === targetId) return;
+  const data = getData();
+  const srcIdx = data.chores.findIndex(c => c.id === dragSrcId);
+  const tgtIdx = data.chores.findIndex(c => c.id === targetId);
+  if (srcIdx < 0 || tgtIdx < 0) return;
+  const [removed] = data.chores.splice(srcIdx, 1);
+  data.chores.splice(tgtIdx, 0, removed);
+  saveData(data);
+  renderManage();
+}
+
+// ── Stats ───────────────────────────────────────────────────────────────────
+function updateStats() {
+  const data = getData();
+
+  // Best streak: for any chore, count consecutive days completed (daily chores)
+  let bestStreak = 0;
+  for (const chore of data.chores) {
+    if (!chore.active || chore.frequency !== 'daily') continue;
+    let streak = 0;
+    const d = new Date();
+    while (true) {
+      const dk = dateKey(d);
+      if (isDoneOn(chore, dk, data.completions)) { streak++; d.setDate(d.getDate() - 1); }
+      else break;
+    }
+    if (streak > bestStreak) bestStreak = streak;
+  }
+  document.getElementById('statStreak').textContent = bestStreak > 0 ? bestStreak + 'd' : '—';
+
+  // Month completions
+  const now = new Date();
+  const mp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  let monthTotal = 0;
+  for (const [k, v] of Object.entries(data.completions)) {
+    if (k.startsWith(mp)) monthTotal += v.length;
+  }
+  document.getElementById('statMonth').textContent = monthTotal;
+
+  // Week rate
+  let scheduled = 0, done = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dk = dateKey(d);
+    for (const chore of data.chores) {
+      if (!chore.active || chore.type === 'one-time') continue;
+      if (isDueOn(chore, d)) {
+        scheduled++;
+        if (isDoneOn(chore, dk, data.completions)) done++;
+      }
+    }
+  }
+  document.getElementById('statRate').textContent = scheduled > 0 ? Math.round(done/scheduled*100) + '%' : '—';
+}
+
+// ── Modal ───────────────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('editId').value = '';
+  document.getElementById('modalTitle').textContent = 'New Chore';
+  document.getElementById('choreName').value = '';
+  document.getElementById('choreEmoji').value = '';
+  document.getElementById('choreCategory').value = '';
+  document.getElementById('choreNotes').value = '';
+  document.getElementById('choreOnce').value = '';
+  document.getElementById('archiveBtn').style.display = 'none';
+  document.getElementById('deleteBtn').style.display = 'none';
+  setType('recurring');
+  setFreq('daily');
+  selectedDays = [];
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('intervalDays').value = 7;
+  document.getElementById('monthlyDay').value = '';
+  setPriority('low');
+  document.getElementById('choreOverlay').classList.add('open');
+}
+
+function editChore(id) {
+  const data = getData();
+  const c = data.chores.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('editId').value = id;
+  document.getElementById('modalTitle').textContent = 'Edit Chore';
+  document.getElementById('choreName').value = c.name;
+  document.getElementById('choreEmoji').value = c.emoji || '';
+  document.getElementById('choreCategory').value = c.category || '';
+  document.getElementById('choreNotes').value = c.notes || '';
+  document.getElementById('archiveBtn').style.display = '';
+  document.getElementById('archiveBtn').textContent = c.active ? 'Archive this chore' : 'Unarchive this chore';
+  document.getElementById('deleteBtn').style.display = '';
+  setType(c.type || 'recurring');
+  if (c.type === 'one-time') {
+    document.getElementById('choreOnce').value = c.due || '';
+  } else {
+    setFreq(c.frequency || 'daily');
+    selectedDays = c.days || [];
+    document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', selectedDays.includes(b.dataset.day)));
+    document.getElementById('intervalDays').value = c.intervalDays || 7;
+    document.getElementById('monthlyDay').value = c.monthlyDay || '';
+  }
+  setPriority(c.priority || 'low');
+  document.getElementById('choreOverlay').classList.add('open');
+}
+
+function saveChore() {
+  const name = document.getElementById('choreName').value.trim();
+  if (!name) { showToast('Please enter a name'); return; }
+  const data = getData();
+  const editId = document.getElementById('editId').value;
+  const id = editId || uid();
+  const today = todayKey();
+
+  const chore = {
+    id,
+    name,
+    emoji: document.getElementById('choreEmoji').value.trim() || '',
+    category: document.getElementById('choreCategory').value.trim(),
+    type: currentType,
+    frequency: currentType === 'recurring' ? currentFreq : null,
+    days: currentFreq === 'weekly' ? selectedDays : [],
+    intervalDays: parseInt(document.getElementById('intervalDays').value) || 7,
+    monthlyDay: parseInt(document.getElementById('monthlyDay').value) || 1,
+    priority: currentPriority,
+    notes: document.getElementById('choreNotes').value.trim(),
+    created: editId ? (data.chores.find(c => c.id === editId) || {}).created || today : today,
+    due: currentType === 'one-time' ? document.getElementById('choreOnce').value || null : null,
+    lastCompleted: editId ? (data.chores.find(c => c.id === editId) || {}).lastCompleted || null : null,
+    active: true
+  };
+
+  if (editId) {
+    const idx = data.chores.findIndex(c => c.id === editId);
+    if (idx >= 0) data.chores[idx] = { ...data.chores[idx], ...chore };
+  } else {
+    data.chores.push(chore);
+  }
+  saveData(data);
+  document.getElementById('choreOverlay').classList.remove('open');
+  showToast(editId ? 'Chore updated' : 'Chore added!');
+  setTab(currentTab === 'manage' ? 'manage' : 'today');
+  updateStats();
+}
+
+function archiveChore() {
+  const id = document.getElementById('editId').value;
+  if (!id) return;
+  const data = getData();
+  const c = data.chores.find(x => x.id === id);
+  if (!c) return;
+  c.active = !c.active;
+  saveData(data);
+  document.getElementById('choreOverlay').classList.remove('open');
+  showToast(c.active ? 'Chore restored' : 'Chore archived');
+  renderManage();
+}
+
+function deleteChoreModal() {
+  const id = document.getElementById('editId').value;
+  if (!id) return;
+  if (!confirm('Delete this chore and all its history?')) return;
+  deleteChore(id);
+  document.getElementById('choreOverlay').classList.remove('open');
+}
+
+function deleteChore(id) {
+  if (!document.getElementById('choreOverlay').classList.contains('open')) {
+    if (!confirm('Delete this chore and all its history?')) return;
+  }
+  const data = getData();
+  data.chores = data.chores.filter(c => c.id !== id);
+  // Remove from completions
+  for (const dk of Object.keys(data.completions)) {
+    data.completions[dk] = data.completions[dk].filter(e => e.id !== id);
+    if (data.completions[dk].length === 0) delete data.completions[dk];
+  }
+  saveData(data);
+  showToast('Deleted');
+  renderManage();
+  updateStats();
+}
+
+function setType(t) {
+  currentType = t;
+  document.getElementById('typeRecurring').classList.toggle('active', t === 'recurring');
+  document.getElementById('typeOnetime').classList.toggle('active', t === 'one-time');
+  document.getElementById('recurringOptions').classList.toggle('hidden', t === 'one-time');
+  document.getElementById('onetimeOptions').classList.toggle('hidden', t === 'recurring');
+}
+
+function setFreq(f) {
+  currentFreq = f;
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.toggle('active', b.dataset.freq === f));
+  document.getElementById('dayPicker').classList.toggle('hidden', f !== 'weekly');
+  document.getElementById('intervalPicker').classList.toggle('hidden', f !== 'interval');
+  document.getElementById('monthlyPicker').classList.toggle('hidden', f !== 'monthly');
+}
+
+function toggleDay(d) {
+  const idx = selectedDays.indexOf(d);
+  if (idx >= 0) selectedDays.splice(idx, 1); else selectedDays.push(d);
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', selectedDays.includes(b.dataset.day)));
+}
+
+function setPriority(p) {
+  currentPriority = p;
+  document.querySelectorAll('.priority-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.pri === p);
+    if (b.dataset.pri === p) { b.classList.add(p); } else { b.classList.remove('high','medium','low'); }
+  });
+}
+
+function overlayClickOutside(e, id) {
+  if (e.target === document.getElementById(id)) document.getElementById(id).classList.remove('open');
+}
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+updateStats();
+setTab('today');
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
