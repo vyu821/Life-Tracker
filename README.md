@@ -119,26 +119,26 @@ A restaurant tracker with four tabs: List, Map, Ranking, Stats.
 
 ## Changelog
 
-### v1.0.0 — Initial build
-Home dashboard, habits tracker, fitness tracker, restaurant tracker, media tracker, travel tracker. Shared design system established.
-
-### v1.0.1 — Lucide CDN fix
-Pinned Lucide to `@0.383.0` via jsDelivr. Added `if(window.lucide)` guard before every `lucide.createIcons()` call.
-
-### v1.1.0 — PPL fitness tracker + Hunter Stats
-Replaced generic fitness page with Push / Pull / Legs tracker (dark theme). Added Hunter Stats gamified companion (Solo Leveling theme, rank system E→S, muscle SVG diagram, quests, achievements). Both read `ppl_v3`.
-
-### v1.1.1 — Nommies: Google Maps CSV fix + inline delete
-Full RFC 4180 CSV parser. Auto-detection of Google Maps export columns. Inline delete button on cards. URL/Maps link field. Notes search. XSS protection.
-
-### v1.2.0 — Nommies: Leaflet map + Elo ranking
-Leaflet map tab with Nominatim geocoding and custom SVG pins. Elo ranking minigame using binary search comparisons. Ranking leaderboard tab. Tier badges by percentile. 4-tab nav.
-
-### v1.2.1 — Nommies UI rename + fitness overhaul
-Restaurant tracker user-facing text updated to "Nommies". Fitness page replaced: desktop sidebar, multi-type day logging, calendar day popout, motivational quotes, iOS safe area insets.
+### v1.3.1 — Hunter Stats removed
+`hunter-stats.html` deleted. All references removed from `fitness.html`: Hunter button, sidebar link, bottom nav button, associated CSS. `switchDay` nav logic simplified.
 
 ### v1.3.0 — Home calendar, chores, file renames, travel removed
 `index.html` rebuilt with monthly calendar (auto-dots + manual logging) and drag-to-reorder cards. `habits.html` → `chores.html` (text and localStorage key updated). `restaurants.html` → `nommies.html`. `travel.html` removed. Leaflet CDN switched to cdnjs.
 
-### v1.3.1 — Hunter Stats removed
-`hunter-stats.html` deleted. All references removed from `fitness.html`: Hunter button, sidebar link, bottom nav button, associated CSS. `switchDay` nav logic simplified.
+### v1.2.1 — Nommies UI rename + fitness overhaul
+Restaurant tracker user-facing text updated to "Nommies". Fitness page replaced: desktop sidebar, multi-type day logging, calendar day popout, motivational quotes, iOS safe area insets.
+
+### v1.2.0 — Nommies: Leaflet map + Elo ranking
+Leaflet map tab with Nominatim geocoding and custom SVG pins. Elo ranking minigame using binary search comparisons. Ranking leaderboard tab. Tier badges by percentile. 4-tab nav.
+
+### v1.1.1 — Nommies: Google Maps CSV fix + inline delete
+Full RFC 4180 CSV parser. Auto-detection of Google Maps export columns. Inline delete button on cards. URL/Maps link field. Notes search. XSS protection.
+
+### v1.1.0 — PPL fitness tracker + Hunter Stats
+Replaced generic fitness page with Push / Pull / Legs tracker (dark theme). Added Hunter Stats gamified companion (Solo Leveling theme, rank system E→S, muscle SVG diagram, quests, achievements). Both read `ppl_v3`.
+
+### v1.0.1 — Lucide CDN fix
+Pinned Lucide to `@0.383.0` via jsDelivr. Added `if(window.lucide)` guard before every `lucide.createIcons()` call.
+
+### v1.0.0 — Initial build
+Home dashboard, habits tracker, fitness tracker, restaurant tracker, media tracker, travel tracker. Shared design system established.
