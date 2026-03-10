@@ -284,3 +284,18 @@ Leaflet CDN switched from `unpkg.com` to `cdnjs.cloudflare.com` for reliability.
 | `chores.html` | Daily/weekly chore tracker |
 | `media.html` | Movies, TV, books tracker |
 | `habits.html` | Original habits tracker (retained, superseded by chores.html) |
+
+### v1.3.1 — Hunter Stats removed
+
+`hunter-stats.html` deleted. All references to it removed from `fitness.html`: the Hunter button in the top bar, the Hunter link in the desktop sidebar, the ⚡ Stats button in the mobile bottom nav, and all associated CSS (`.btn-hunter`, `.sidebar-hunter`, `.nav-btn.hunter-nav`, `--hunter` color variable). The `switchDay` nav reset logic was also simplified since it no longer needs to special-case the hunter nav button. Fitness page is otherwise unchanged.
+
+**Updated file list**
+
+| File | Description |
+|---|---|
+| `index.html` | Home dashboard with calendar and tracker cards |
+| `fitness.html` | PPL workout tracker (dark theme) |
+| `nommies.html` | Restaurant tracker with map, Elo ranking |
+| `chores.html` | Daily/weekly chore tracker |
+| `media.html` | Movies, TV, books tracker |
+| `habits.html` | Original habits tracker (retained, superseded by chores.html) |

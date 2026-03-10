@@ -14,8 +14,7 @@
 :root {
   --bg:#0d0d0d;--surface:#161616;--surface2:#1f1f1f;--surface3:#252525;
   --border:#272727;--push:#e85d26;--pull:#2688e8;--legs:#26c47a;
-  --abs:#e8c426;--log:#a855f7;--hunter:#4a9eff;
-  --text:#f0ede8;--muted:#888;--dim:#4a4a4a;
+  --abs:#e8c426;--log:#a855f7;  --text:#f0ede8;--muted:#888;--dim:#4a4a4a;
   --safe-bottom:env(safe-area-inset-bottom,0px);--safe-top:env(safe-area-inset-top,0px);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -39,14 +38,6 @@ body.day-push .top-bar h1{color:var(--push);}body.day-pull .top-bar h1{color:var
 body.day-legs .top-bar h1{color:var(--legs);}body.day-abs .top-bar h1{color:var(--abs);}
 body.day-log .top-bar h1{color:var(--log);}
 .quote-text{font-size:0.65rem;color:var(--dim);font-style:italic;font-weight:300;margin-top:3px;line-height:1.4;}
-.btn-hunter{flex-shrink:0;display:flex;align-items:center;gap:5px;
-  padding:7px 11px;border-radius:7px;border:1px solid rgba(74,158,255,0.35);
-  background:rgba(74,158,255,0.08);color:var(--hunter);cursor:pointer;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.72rem;
-  letter-spacing:1px;text-transform:uppercase;text-decoration:none;
-  transition:all 0.2s;white-space:nowrap;}
-.btn-hunter:hover{background:rgba(74,158,255,0.15);border-color:rgba(74,158,255,0.6);}
-.btn-hunter svg{width:14px;height:14px;flex-shrink:0;}
 
 /* ── LAYOUT ── */
 .app-body{flex:1;display:flex;overflow:hidden;min-height:0;}
@@ -80,14 +71,6 @@ body.day-log .top-bar h1{color:var(--log);}
   .sidebar-btn.active-abs{background:rgba(232,196,38,0.08);}.sidebar-btn.active-abs .sb-label{color:var(--abs);}.sidebar-btn.active-abs .sb-dot{background:var(--abs);}
   .sidebar-btn.active-log{background:rgba(168,85,247,0.08);}.sidebar-btn.active-log .sb-label{color:var(--log);}.sidebar-btn.active-log .sb-dot{background:var(--log);}
   .sidebar-divider{height:1px;background:var(--border);margin:6px 0;}
-  .sidebar-hunter{
-    display:flex;flex-direction:column;align-items:center;gap:4px;
-    padding:12px 6px;border-radius:8px;border:1px solid rgba(74,158,255,0.25);
-    background:rgba(74,158,255,0.06);text-decoration:none;margin-top:auto;transition:all 0.2s;
-  }
-  .sidebar-hunter:hover{background:rgba(74,158,255,0.12);border-color:rgba(74,158,255,0.5);}
-  .sidebar-hunter span{font-family:'Barlow Condensed',sans-serif;font-weight:700;
-    font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--hunter);}
   .bottom-nav{display:none;}
 }
 
@@ -243,8 +226,6 @@ body.day-log .top-bar h1{color:var(--log);}
 .nav-btn.active-legs .nav-label{color:var(--legs);}.nav-btn.active-legs .nav-dot{background:var(--legs);}
 .nav-btn.active-abs .nav-label{color:var(--abs);}.nav-btn.active-abs .nav-dot{background:var(--abs);}
 .nav-btn.active-log .nav-label{color:var(--log);}.nav-btn.active-log .nav-dot{background:var(--log);}
-.nav-btn.hunter-nav .nav-label{color:var(--hunter);}
-.nav-btn.hunter-nav{border-left:1px solid var(--border);}
 /* hide bottom nav on desktop */
 @media(min-width:768px){.bottom-nav{display:none;}}
 
@@ -331,12 +312,6 @@ body.day-log .top-bar h1{color:var(--log);}
     <div class="quote-text" id="dailyQuote"></div>
   </div>
   <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 11px;border-radius:7px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;margin-right:4px;transition:color 0.2s;">&#8592; Home</a>
-  <a href="hunter-stats.html" class="btn-hunter">
-  <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 11px;border-radius:7px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;margin-right:4px;transition:color 0.2s;">&#8592; Home</a>
-  <a href="hunter-stats.html" class="btn-hunter">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-    Hunter
-  </a>
 </div>
 
 <div class="app-body">
@@ -349,10 +324,6 @@ body.day-log .top-bar h1{color:var(--log);}
   <button class="sidebar-btn" onclick="switchDay('abs',this)"><div class="sb-label">Abs</div><div class="sb-dot"></div></button>
   <div class="sidebar-divider"></div>
   <button class="sidebar-btn" onclick="switchDay('log',this)"><div class="sb-label">Log</div><div class="sb-dot"></div></button>
-  <a href="hunter-stats.html" class="sidebar-hunter">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-    <span>Hunter</span>
-  </a>
 </nav>
 
 <div class="scroll-area">
@@ -441,7 +412,6 @@ body.day-log .top-bar h1{color:var(--log);}
   <button class="nav-btn" onclick="switchDay('legs',this)"><div class="nav-label">Legs</div><div class="nav-dot"></div></button>
   <button class="nav-btn" onclick="switchDay('abs',this)"><div class="nav-label">Abs</div><div class="nav-dot"></div></button>
   <button class="nav-btn" onclick="switchDay('log',this)"><div class="nav-label">Log</div><div class="nav-dot"></div></button>
-  <button class="nav-btn hunter-nav" onclick="window.location='hunter-stats.html'"><div class="nav-label">⚡ Stats</div><div class="nav-dot"></div></button>
 </nav>
 
 <!-- CALENDAR DAY POPOUT -->
@@ -570,7 +540,7 @@ function toggle(h){h.parentElement.classList.toggle('open');}
 function switchDay(day,btn){
   document.querySelectorAll('.day-panel,.log-panel').forEach(function(p){p.classList.remove('active');});
   // handle both sidebar and bottom nav buttons
-  document.querySelectorAll('.nav-btn').forEach(function(b){b.className=b.classList.contains('hunter-nav')?'nav-btn hunter-nav':'nav-btn';});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.className='nav-btn';});
   document.querySelectorAll('.sidebar-btn').forEach(function(b){b.className='sidebar-btn';});
   if(day==='log'){
     document.getElementById('panel-log').classList.add('active');
