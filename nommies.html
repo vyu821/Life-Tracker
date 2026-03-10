@@ -17,7 +17,7 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <style>
   :root {
-    --bg:#F9F7F4;--card:#FFFFFF;--text:#1A1A1A;--text-muted:#888880;
+    --bg:#F2EFE9;--card:#FDFCFA;--text:#1A1A1A;--text-muted:#888880;
     --accent:#C4714A;--accent-light:#F5E8E0;--border:#EDEBE7;
     --shadow:0 2px 12px rgba(0,0,0,0.07);--radius:16px;
     --font-head:'DM Serif Display',serif;--font-body:'DM Sans',sans-serif;
@@ -190,6 +190,50 @@
 
   .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;}
   .toast.show{opacity:1;}
+
+/* ── DARK MODE ── */
+html.dark {
+  --bg: #1C1917;
+  --card: #28251F;
+  --text: #F0EDE8;
+  --text-muted: #8A8480;
+  --accent: #D4845A;
+  --accent-light: #3A2419;
+  --border: #3A3630;
+  --shadow: 0 2px 12px rgba(0,0,0,0.35);
+  --red: #E07070;
+  --red-light: #3D1A1A;
+  --yellow: #D4A843;
+  --yellow-light: #2E2510;
+}
+html.dark .chip.on-workout { background: #2A2450; border-color: #6C5CE7; color: #9D95F0; }
+html.dark .chip.on-chore   { background: #142433; border-color: #2D9CDB; color: #5BB8EC; }
+html.dark .chip.on-rest    { background: #2A2A2A; border-color: #666; color: #999; }
+html.dark .status-Visited  { background: #1A2E1C; color: #6DBF78; }
+html.dark .status-Favorite { background: #2E1E0A; color: #F0A050; }
+html.dark .r-elo-rank      { background: #3A3630; color: #F0EDE8; }
+html.dark .priority-btn.active.low { background: #2A2A2A; border-color: #666; color: #999; }
+html.dark .overdue-banner  { border-color: #5A2A2A; }
+html.dark .chore-item.overdue { border-color: #5A2A2A; background: #221616; }
+html.dark .day-entry-status.due { background: #142433; color: #5BB8EC; }
+html.dark .cal-day.other-month { color: #3A3630; }
+html.dark .cal-cell.other-month { opacity: 0.2; }
+html.dark input, html.dark textarea, html.dark select { color-scheme: dark; }
+
+/* Toggle button */
+.dark-toggle {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background .15s, transform .15s;
+  flex-shrink: 0;
+}
+.dark-toggle:active { transform: scale(0.93); background: var(--accent-light); }
+
 </style>
 </head>
 <body>
@@ -198,6 +242,7 @@
     <a class="back-btn" href="index.html"><i data-lucide="arrow-left" width="18" height="18"></i> Back</a>
     <div class="page-title">Nommies</div>
     <div class="nav-right">
+      <button class="icon-btn dark-toggle" id="darkToggle" onclick="toggleDark()" title="Toggle dark mode"><i data-lucide="moon" width="16" height="16"></i></button>
       <button class="icon-btn" onclick="openImport()" title="Import"><i data-lucide="upload" width="16" height="16"></i></button>
       <button class="icon-btn" onclick="exportJSON()" title="Export"><i data-lucide="download" width="16" height="16"></i></button>
     </div>
@@ -213,16 +258,16 @@
   <!-- LIST -->
   <div id="viewList">
     <div class="search-row">
-      <input class="search-input" id="searchInput" type="text"  placeholder="Search nommies..." oninput="renderList()">
+      <input class="search-input" id="searchInput" type="text"  placeholder="Search nommies..." oninput="renderList()" autocomplete="off">
       <button class="filter-btn" id="filterToggle" onclick="toggleFilters()">
         <i data-lucide="sliders-horizontal" width="14" height="14"></i> Filter
       </button>
     </div>
     <div class="filter-panel" id="filterPanel">
       <div class="filter-grid">
-        <div><label class="field-label">Cuisine</label><input class="field-input" id="filterCuisine" type="text" placeholder="e.g. Japanese" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px"></div>
-        <div><label class="field-label">City</label><input class="field-input" id="filterCity" type="text" placeholder="e.g. SF" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px"></div>
-        <div><label class="field-label">Min rating</label><input class="field-input" id="filterMinRating" type="number" min="0" max="10" placeholder="0" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px"></div>
+        <div><label class="field-label">Cuisine</label><input class="field-input" id="filterCuisine" type="text" placeholder="e.g. Japanese" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px" autocomplete="off"></div>
+        <div><label class="field-label">City</label><input class="field-input" id="filterCity" type="text" placeholder="e.g. SF" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px" autocomplete="off"></div>
+        <div><label class="field-label">Min rating</label><input class="field-input" id="filterMinRating" type="number" min="0" max="10" placeholder="0" oninput="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px" autocomplete="off"></div>
         <div><label class="field-label">Sort by</label>
           <select class="field-input" id="sortSelect" onchange="renderList()" style="margin-bottom:0;font-size:13px;padding:9px 12px">
             <option value="date">Date added</option>
@@ -266,11 +311,11 @@
     <div class="modal-title" id="modalTitle">New Nommy</div>
     <input type="hidden" id="editId">
     <label class="field-label">Name *</label>
-    <input class="field-input" id="rName" type="text" placeholder="Nommy name" maxlength="100">
+    <input class="field-input" id="rName" type="text" placeholder="Nommy name" maxlength="100" autocomplete="off">
     <label class="field-label">Cuisine</label>
-    <input class="field-input" id="rCuisine" type="text" placeholder="e.g. Japanese, Italian">
+    <input class="field-input" id="rCuisine" type="text" placeholder="e.g. Japanese, Italian" autocomplete="off">
     <label class="field-label">Neighborhood / City</label>
-    <input class="field-input" id="rNeighborhood" type="text" placeholder="e.g. Mission, SF">
+    <input class="field-input" id="rNeighborhood" type="text" placeholder="e.g. Mission, SF" autocomplete="off">
     <label class="field-label">Status</label>
     <select class="field-input" id="rStatus">
       <option>Visited</option><option>Want to Go</option><option>Favorite</option>
@@ -287,9 +332,9 @@
     <label class="field-label">List</label>
     <select class="field-input" id="rList"></select>
     <label class="field-label">Notes</label>
-    <textarea class="field-input" id="rNotes" placeholder="What did you think?"></textarea>
+    <textarea class="field-input" id="rNotes" placeholder="What did you think?" autocomplete="off"></textarea>
     <label class="field-label">Google Maps URL</label>
-    <input class="field-input" id="rUrl" type="url" placeholder="https://maps.google.com/...">
+    <input class="field-input" id="rUrl" type="url" placeholder="https://maps.google.com/..." autocomplete="off">
     <div class="btn-row">
       <button class="btn-secondary" id="deleteBtn" onclick="deleteRestaurant()" style="display:none">
         <i data-lucide="trash-2" width="14" height="14"></i>
@@ -326,7 +371,7 @@
     <div class="modal-handle"></div>
     <div class="modal-title">Manage Lists</div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <input class="field-input" id="newListInput" type="text" placeholder="New list name" maxlength="30" style="flex:1;margin-bottom:0">
+      <input class="field-input" id="newListInput" type="text" placeholder="New list name" maxlength="30" style="flex:1;margin-bottom:0" autocomplete="off">
       <button style="padding:10px 14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer" onclick="addCustomList()">Add</button>
     </div>
     <div id="customListsList"></div>
@@ -1199,6 +1244,42 @@ function initSwipeDismiss(sheetEl, closeFn) {
   if (eloSheet) initSwipeDismiss(eloSheet, function() {
     document.getElementById('eloOverlay').classList.remove('open');
   });
+
+
+// ── DARK MODE ──
+(function() {
+  var KEY = 'lifetracker_v1_settings';
+  function getSettings() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function saveSettings(obj) {
+    try { localStorage.setItem(KEY, JSON.stringify(obj)); } catch(e) {}
+  }
+  function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    var btn = document.getElementById('darkToggle');
+    if (!btn) return;
+    var icon = btn.querySelector('i');
+    if (!icon) return;
+    icon.setAttribute('data-lucide', dark ? 'sun' : 'moon');
+    if (window.lucide) lucide.createIcons();
+  }
+  window.toggleDark = function() {
+    var s = getSettings();
+    s.dark = !document.documentElement.classList.contains('dark');
+    saveSettings(s);
+    applyTheme(s.dark);
+  };
+  // Apply on load
+  var s = getSettings();
+  // Also check OS preference as fallback
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var isDark = typeof s.dark !== 'undefined' ? s.dark : prefersDark;
+  if (isDark) document.documentElement.classList.add('dark');
+  document.addEventListener('DOMContentLoaded', function() {
+    applyTheme(isDark);
+  });
+})();
 
 </script>
 </body>

@@ -24,6 +24,7 @@ README.md       This file
 - **Monthly calendar** — dots appear automatically from workout logs and restaurant entry dates. Tap any day to open a bottom sheet and manually log Workout, Chores, Nommie, or Rest with an optional note. Manual entries stored in `lifetracker_v1_calendar`
 - **Tracker cards** — live stat summary for each tracker, tappable to navigate. Cards are drag-to-reorder via a grip handle, works on desktop (HTML5 drag) and mobile (touch). Order persists in `lifetracker_v1_card_order`
 - Settings panel (gear icon) to set your name
+- Dark mode toggle (moon/sun icon) in the top-right header
 
 ### Fitness (`fitness.html`)
 
@@ -45,6 +46,7 @@ A restaurant tracker with four tabs: List, Map, Ranking, Stats.
 - **Ranking** — Elo-based leaderboard with head-to-head comparison game (binary search, Better/Same/Worse). Tier badges S/A/B/C/D by percentile
 - **Stats** — total, visited, avg rating, ranked count, on-map count, top cuisines and cities
 - Import: Google Maps CSV, generic CSV, JSON. Export: JSON
+- Dark mode toggle in the top-right nav
 - Data stored in `lifetracker_v1_restaurants`
 
 ### Chores (`chores.html`)
@@ -65,26 +67,46 @@ A full-featured chore and task tracker with rich scheduling, four tabs, and a co
 
 **Migration.** On load, any existing v1 data (habits array with daily/weekly frequencies, completions as arrays of IDs) is automatically converted to the v2 schema with no data loss.
 
+- Dark mode toggle in the top-right nav
 - Data stored in `lifetracker_v1_chores`
 
 ---
 
 ## Design System
 
+### Light mode
+
 | Token | Value |
 |---|---|
-| Background | `#F9F7F4` (warm off-white) |
-| Card | `#FFFFFF` |
+| Background | `#F2EFE9` (warm parchment) |
+| Card | `#FDFCFA` |
 | Text | `#1A1A1A` |
 | Muted text | `#888880` |
 | Accent | `#C4714A` (dusty terracotta) |
 | Accent light | `#F5E8E0` |
 | Border | `#EDEBE7` |
+
+### Dark mode
+
+| Token | Value |
+|---|---|
+| Background | `#1C1917` (warm dark brown) |
+| Card | `#28251F` |
+| Text | `#F0EDE8` |
+| Muted text | `#8A8480` |
+| Accent | `#D4845A` (slightly brighter terracotta) |
+| Accent light | `#3A2419` |
+| Border | `#3A3630` |
+
+Dark mode is toggled via a moon/sun button in the header of each light-theme page. Preference is saved to `lifetracker_v1_settings` and applied immediately on page load. On first visit, the OS `prefers-color-scheme` setting is used as the default. `fitness.html` is always dark and has no toggle.
+
+### Fonts and shape
+
+| Token | Value |
+|---|---|
 | Heading font | DM Serif Display |
 | Body font | DM Sans |
 | Border radius | 16px (cards), 12px (inputs/buttons) |
-
-`fitness.html` uses its own dark theme: Barlow Condensed + Barlow, `#0d0d0d` background, colored accents per day type.
 
 ### Calendar dot colors
 
@@ -111,7 +133,7 @@ Colors were chosen to be distinguishable for red-green colorblindness (deuterano
 | `lifetracker_v1_chores` | `chores.html`, `index.html` | `{ version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] } }` |
 | `lifetracker_v1_calendar` | `index.html` | `{ 'YYYY-MM-DD': { types:[], note:'' } }` |
 | `lifetracker_v1_card_order` | `index.html` | `['nommies','fitness','chores']` |
-| `lifetracker_v1_settings` | `index.html` | `{ name: '' }` |
+| `lifetracker_v1_settings` | `index.html`, `chores.html`, `nommies.html` | `{ name: '', dark: bool }` |
 
 ---
 
@@ -123,6 +145,7 @@ Colors were chosen to be distinguishable for red-green colorblindness (deuterano
 - Google Fonts: DM Serif Display + DM Sans (light pages), Barlow Condensed + Barlow (fitness)
 - No frameworks, no npm, no build step
 - All viewports lock to `user-scalable=no, maximum-scale=1.0` to prevent accidental pinch-zoom
+- Dark mode uses `html.dark` class with CSS custom property overrides; no JS style manipulation at runtime
 
 ---
 
@@ -136,11 +159,17 @@ Colors were chosen to be distinguishable for red-green colorblindness (deuterano
 
 ## Changelog
 
+### v1.4.4 — Dark mode
+Dark mode added to `index.html`, `chores.html`, and `nommies.html` (fitness is always dark and excluded). A moon/sun toggle button sits in each page's top-right header. Clicking it toggles the `html.dark` class and saves the preference to `lifetracker_v1_settings` as `{ dark: bool }`. On first visit, the OS `prefers-color-scheme` setting is used as the default. Dark palette uses warm brown-blacks (`#1C1917` bg, `#28251F` card, `#3A3630` border) to match the app's existing warm character. The accent is nudged slightly brighter to `#D4845A` for better contrast on dark surfaces. All semantic colors (overdue red, priority states, status badges, chip active states) have dark-mode variants. The `lifetracker_v1_settings` key is updated to `{ name, dark }`, and `saveSettings` merges keys rather than replacing the object, so name and dark preference never clobber each other.
+
+### v1.4.3 — Autocomplete disabled
+`autocomplete="off"` added to every text input and textarea across `index.html`, `chores.html`, and `nommies.html`. Covers all form fields: chore name, emoji, category, notes, completion notes, log search, all nommies fields, search/filter bars, the settings name field, and the calendar day note. Hidden and file inputs left unchanged.
+
 ### v1.4.2 — Swipe-to-dismiss + pinch-zoom lock
 All bottom sheets and modals can now be dismissed by dragging down. Dragging past 30% of the sheet's height, or a fast flick, closes it with a matching animation; releasing before the threshold snaps it back. A pill-shaped drag handle is shown at the top of every sheet as a visual cue. Sheets covered: `index.html` (calendar day sheet, settings panel), `chores.html` (add/edit modal), `nommies.html` (add/edit, import, manage lists, and Elo modals), `fitness.html` (calendar day popout, confirm/delete modal). All pages also now set `maximum-scale=1.0, user-scalable=no` in the viewport meta tag to prevent accidental pinch-zoom.
 
 ### v1.4.1 — Colorblind-safe palette + remove media tracker
-`media.html` removed. Color scheme audited for red-green colorblindness (deuteranopia/protanopia). `index.html` calendar: workout dot changed from orange-red to indigo (`#6C5CE7`), chore dot updated to a clearer blue (`#2D9CDB`), keeping nommie as terracotta and rest as gray. `chores.html`: priority dots changed from red/yellow/green to orange/blue/gray (high/medium/low); calendar overdue dot changed from red to orange (`#E07B27`); "due" day-detail status changed from yellow to blue. All light-theme calendars now share the same dot conventions.
+`media.html` removed. Color scheme audited for red-green colorblindness (deuteranopia/protanopia). `index.html` calendar: workout dot changed from orange-red to indigo (`#6C5CE7`), chore dot updated to a clearer blue (`#2D9CDB`), keeping nommie as terracotta and rest as gray. `chores.html`: priority dots changed from red/yellow/green to orange/blue/gray (high/medium/low); calendar overdue dot changed from red to orange (`#E07B27`); "due" day-detail status changed from yellow to blue. All light-theme calendars now share the same dot conventions. Light background softened from `#F9F7F4` to `#F2EFE9` and card from `#FFFFFF` to `#FDFCFA`.
 
 ### v1.4.0 — Chores overhaul
 `chores.html` fully rebuilt. New data model (v2 schema) supports recurring chores (daily, weekly by day, every N days, monthly) and one-time tasks, each with emoji, category, priority (low/medium/high), notes, and active/archived status. Four tabs: Today (overdue banner, priority sorting, inline completion notes, upcoming section), Calendar (dots for completions and missed chores, tap-to-view day detail sheet), Log (full history with filter and per-entry delete), Manage (active/archived filter, drag-to-reorder, full edit/archive/delete). Stats strip shows best streak, monthly completions, and 7-day on-time rate. Migration function converts all existing v1 data automatically. `lifetracker_v1_chores` schema updated to `{ version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] } }`.

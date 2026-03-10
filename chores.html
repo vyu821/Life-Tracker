@@ -15,8 +15,8 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <style>
 :root {
-  --bg: #F9F7F4;
-  --card: #FFFFFF;
+  --bg: #F2EFE9;
+  --card: #FDFCFA;
   --text: #1A1A1A;
   --text-muted: #888880;
   --accent: #C4714A;
@@ -271,6 +271,50 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 /* Tab views */
 .tab-view { display: none; }
 .tab-view.active { display: block; }
+
+/* ── DARK MODE ── */
+html.dark {
+  --bg: #1C1917;
+  --card: #28251F;
+  --text: #F0EDE8;
+  --text-muted: #8A8480;
+  --accent: #D4845A;
+  --accent-light: #3A2419;
+  --border: #3A3630;
+  --shadow: 0 2px 12px rgba(0,0,0,0.35);
+  --red: #E07070;
+  --red-light: #3D1A1A;
+  --yellow: #D4A843;
+  --yellow-light: #2E2510;
+}
+html.dark .chip.on-workout { background: #2A2450; border-color: #6C5CE7; color: #9D95F0; }
+html.dark .chip.on-chore   { background: #142433; border-color: #2D9CDB; color: #5BB8EC; }
+html.dark .chip.on-rest    { background: #2A2A2A; border-color: #666; color: #999; }
+html.dark .status-Visited  { background: #1A2E1C; color: #6DBF78; }
+html.dark .status-Favorite { background: #2E1E0A; color: #F0A050; }
+html.dark .r-elo-rank      { background: #3A3630; color: #F0EDE8; }
+html.dark .priority-btn.active.low { background: #2A2A2A; border-color: #666; color: #999; }
+html.dark .overdue-banner  { border-color: #5A2A2A; }
+html.dark .chore-item.overdue { border-color: #5A2A2A; background: #221616; }
+html.dark .day-entry-status.due { background: #142433; color: #5BB8EC; }
+html.dark .cal-day.other-month { color: #3A3630; }
+html.dark .cal-cell.other-month { opacity: 0.2; }
+html.dark input, html.dark textarea, html.dark select { color-scheme: dark; }
+
+/* Toggle button */
+.dark-toggle {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background .15s, transform .15s;
+  flex-shrink: 0;
+}
+.dark-toggle:active { transform: scale(0.93); background: var(--accent-light); }
+
 </style>
 </head>
 <body>
@@ -283,6 +327,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
     </a>
     <div class="page-title">Chores</div>
     <div class="nav-right">
+      <button class="icon-btn dark-toggle" id="darkToggle" onclick="toggleDark()" title="Toggle dark mode"><i data-lucide="moon" width="16" height="16"></i></button>
       <button class="icon-btn" onclick="setTab('manage')" title="Manage"><i data-lucide="settings-2" width="16" height="16"></i></button>
     </div>
   </div>
@@ -330,7 +375,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
   <!-- LOG TAB -->
   <div class="tab-view" id="viewLog">
     <div class="log-filter-row">
-      <input class="log-search" id="logSearch" type="text" placeholder="Filter by name or category…" oninput="renderLog()">
+      <input class="log-search" id="logSearch" type="text" placeholder="Filter by name or category…" oninput="renderLog()" autocomplete="off">
     </div>
     <div id="logList"></div>
   </div>
@@ -362,16 +407,16 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
     <input type="hidden" id="editId">
 
     <label class="field-label">Name</label>
-    <input class="field-input" id="choreName" type="text" placeholder="e.g. Clean bathroom" maxlength="60">
+    <input class="field-input" id="choreName" type="text" placeholder="e.g. Clean bathroom" maxlength="60" autocomplete="off">
 
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Emoji</label>
-        <input class="field-input" id="choreEmoji" type="text" placeholder="🧹" maxlength="2">
+        <input class="field-input" id="choreEmoji" type="text" placeholder="🧹" maxlength="2" autocomplete="off">
       </div>
       <div class="field-group">
         <label class="field-label">Category</label>
-        <input class="field-input" id="choreCategory" type="text" placeholder="Home" maxlength="30">
+        <input class="field-input" id="choreCategory" type="text" placeholder="Home" maxlength="30" autocomplete="off">
       </div>
     </div>
 
@@ -405,20 +450,20 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
       <div id="intervalPicker" class="hidden">
         <label class="field-label">Repeat every</label>
         <div class="interval-row">
-          <input class="interval-input" id="intervalDays" type="number" min="1" max="365" value="7">
+          <input class="interval-input" id="intervalDays" type="number" min="1" max="365" value="7" autocomplete="off">
           <span class="interval-unit">days</span>
         </div>
       </div>
       <div id="monthlyPicker" class="hidden">
         <label class="field-label">Day of month</label>
-        <input class="field-input" id="monthlyDay" type="number" min="1" max="31" placeholder="e.g. 1" style="margin-bottom:16px">
+        <input class="field-input" id="monthlyDay" type="number" min="1" max="31" placeholder="e.g. 1" style="margin-bottom:16px" autocomplete="off">
       </div>
     </div>
 
     <!-- One-time options -->
     <div id="onetimeOptions" class="hidden">
       <label class="field-label">Due date</label>
-      <input class="field-input" id="choreOnce" type="date">
+      <input class="field-input" id="choreOnce" type="date" autocomplete="off">
     </div>
 
     <label class="field-label">Priority</label>
@@ -429,7 +474,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
     </div>
 
     <label class="field-label">Notes (optional)</label>
-    <textarea class="field-input" id="choreNotes" rows="2" placeholder="Any extra details…" style="resize:none;margin-bottom:16px"></textarea>
+    <textarea class="field-input" id="choreNotes" rows="2" placeholder="Any extra details…" style="resize:none;margin-bottom:16px" autocomplete="off"></textarea>
 
     <button class="btn-primary" onclick="saveChore()">Save</button>
     <button class="btn-secondary" id="archiveBtn" onclick="archiveChore()" style="display:none">Archive this chore</button>
@@ -750,7 +795,7 @@ function choreItemHTML(chore, tk, completions, daysOver, daysAway, isOverdue) {
         </div>
       </div>
       <div class="completion-expand" id="exp_${chore.id}">
-        <textarea class="completion-note-input" id="note_${chore.id}" rows="2" placeholder="Add a note (optional)…"></textarea>
+        <textarea class="completion-note-input" id="note_${chore.id}" rows="2" placeholder="Add a note (optional)…" autocomplete="off"></textarea>
         <div class="confirm-row">
           <button class="confirm-btn primary" onclick="completeChore('${chore.id}')">✓ Mark Complete</button>
           <button class="confirm-btn secondary" onclick="closeExpand('${chore.id}')">Cancel</button>
@@ -1350,6 +1395,42 @@ function initSwipeDismiss(sheetEl, closeFn) {
   if (choreModal) initSwipeDismiss(choreModal, function() {
     document.getElementById('choreOverlay').classList.remove('open');
   });
+
+
+// ── DARK MODE ──
+(function() {
+  var KEY = 'lifetracker_v1_settings';
+  function getSettings() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function saveSettings(obj) {
+    try { localStorage.setItem(KEY, JSON.stringify(obj)); } catch(e) {}
+  }
+  function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    var btn = document.getElementById('darkToggle');
+    if (!btn) return;
+    var icon = btn.querySelector('i');
+    if (!icon) return;
+    icon.setAttribute('data-lucide', dark ? 'sun' : 'moon');
+    if (window.lucide) lucide.createIcons();
+  }
+  window.toggleDark = function() {
+    var s = getSettings();
+    s.dark = !document.documentElement.classList.contains('dark');
+    saveSettings(s);
+    applyTheme(s.dark);
+  };
+  // Apply on load
+  var s = getSettings();
+  // Also check OS preference as fallback
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var isDark = typeof s.dark !== 'undefined' ? s.dark : prefersDark;
+  if (isDark) document.documentElement.classList.add('dark');
+  document.addEventListener('DOMContentLoaded', function() {
+    applyTheme(isDark);
+  });
+})();
 
 </script>
 </body>
