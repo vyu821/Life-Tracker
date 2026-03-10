@@ -7,7 +7,6 @@
     lifetracker_v1_restaurants (read)
     lifetracker_v1_chores     (read)
     ppl_v3                    (read)
-    lifetracker_v1_media      (read)
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -18,55 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js">
-// ─────────────────────────────────────
-//  SWIPE-TO-DISMISS
-//  Drag down > 30% of sheet height, or fast flick → close.
-// ─────────────────────────────────────
-function initSwipeDismiss(sheetEl, closeFn) {
-  var startY = 0, curY = 0, dragging = false, startTime = 0;
-  var THRESHOLD = 0.30;
-  var VELOCITY  = 0.5;
-
-  sheetEl.addEventListener('touchstart', function(e) {
-    var touch = e.touches[0];
-    var rect  = sheetEl.getBoundingClientRect();
-    if (touch.clientY - rect.top > 80) return;
-    startY = touch.clientY;
-    curY   = touch.clientY;
-    dragging = true;
-    startTime = Date.now();
-    sheetEl.style.transition = 'none';
-  }, { passive: true });
-
-  sheetEl.addEventListener('touchmove', function(e) {
-    if (!dragging) return;
-    curY = e.touches[0].clientY;
-    var dy = Math.max(0, curY - startY);
-    sheetEl.style.transform = 'translateY(' + dy + 'px)';
-  }, { passive: true });
-
-  sheetEl.addEventListener('touchend', function() {
-    if (!dragging) return;
-    dragging = false;
-    var dy       = Math.max(0, curY - startY);
-    var elapsed  = Math.max(Date.now() - startTime, 1);
-    var velocity = dy / elapsed;
-    var dismiss  = dy > sheetEl.offsetHeight * THRESHOLD || velocity > VELOCITY;
-
-    if (dismiss) {
-      sheetEl.style.transition = 'transform 0.25s cubic-bezier(0.32,0.72,0,1)';
-      sheetEl.style.transform  = 'translateY(100%)';
-      setTimeout(closeFn, 240);
-    } else {
-      sheetEl.style.transition = 'transform 0.3s cubic-bezier(0.32,0.72,0,1)';
-      sheetEl.style.transform  = '';
-    }
-  });
-}
-
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <style>
 :root {
   --bg:#F2EFE9; --card:#FDFCFA; --text:#1A1A1A; --text-muted:#888880;
@@ -106,8 +57,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .cal-cell.today .cal-num{background:var(--text);color:#fff;border-radius:5px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:600;}
 .cal-dots{display:flex;gap:2px;justify-content:center;height:5px;align-items:center;}
 .cal-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
-.dot-workout{background:#6C5CE7;}
-.dot-chore{background:#2D9CDB;}
+.dot-workout{background:#E8A020;}
+.dot-chore{background:#2BA896;}
 .dot-nommie{background:var(--accent);}
 .dot-rest{background:#CCCCCC;}
 
@@ -127,8 +78,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
 .chip{padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;background:var(--bg);color:var(--text-muted);transition:all .15s;user-select:none;}
 .chip:active{transform:scale(0.95);}
-.chip.on-workout{background:#F0EEFF;border-color:#6C5CE7;color:#6C5CE7;}
-.chip.on-chore{background:#E8F4FB;border-color:#2D9CDB;color:#1A7AB5;}
+.chip.on-workout{background:#FDF3DC;border-color:#E8A020;color:#B87A10;}
+.chip.on-chore{background:#E0F4F2;border-color:#2BA896;color:#1E7A70;}
 .chip.on-nommie{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
 .chip.on-rest{background:#F4F4F4;border-color:#999;color:#555;}
 .note-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:14px;background:var(--bg);color:var(--text);outline:none;resize:none;transition:border-color .15s;margin-bottom:20px;line-height:1.5;}
@@ -188,8 +139,8 @@ html.dark {
   --yellow: #D4A843;
   --yellow-light: #2E2510;
 }
-html.dark .chip.on-workout { background: #2A2450; border-color: #6C5CE7; color: #9D95F0; }
-html.dark .chip.on-chore   { background: #142433; border-color: #2D9CDB; color: #5BB8EC; }
+html.dark .chip.on-workout { background: #2E2408; border-color: #E8A020; color: #D4920A; }
+html.dark .chip.on-chore   { background: #0E2422; border-color: #2BA896; color: #3DCAB8; }
 html.dark .chip.on-rest    { background: #2A2A2A; border-color: #666; color: #999; }
 html.dark .status-Visited  { background: #1A2E1C; color: #6DBF78; }
 html.dark .status-Favorite { background: #2E1E0A; color: #F0A050; }
@@ -251,8 +202,8 @@ html.dark input, html.dark textarea, html.dark select { color-scheme: dark; }
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#6C5CE7"></div>Workout</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#2D9CDB"></div>Chores</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E8A020"></div>Workout</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2BA896"></div>Chores</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Nommie</div>
       <div class="legend-item"><div class="legend-dot" style="background:#CCC"></div>Rest</div>
     </div>
@@ -560,18 +511,6 @@ const CARD_DEFS = [
         : `${done}/${scheduled.length} done today`;
     }
   },
-  {
-    id:'media', href:'media.html', icon:'🎬', title:'Media',
-    stat(){
-      const m = getLS('lifetracker_v1_media',{});
-      const yr = new Date().getFullYear().toString();
-      const movies=(m.movies||[]).filter(x=>(x.dateAdded||'').startsWith(yr)).length;
-      const books=(m.books||[]).filter(x=>(x.dateAdded||'').startsWith(yr)).length;
-      const total=(m.movies||[]).length+(m.books||[]).length+(m.tv||[]).length;
-      if(!total) return 'Nothing tracked yet';
-      return `${movies} movie${movies!==1?'s':''}, ${books} book${books!==1?'s':''} this year`;
-    }
-  },
 ];
 
 // ─────────────────────────────────────
@@ -758,13 +697,19 @@ initGreeting();
 initCal();
 renderCards();
 
-  // Wire swipe-to-dismiss for both bottom sheets
+
+
+// ─────────────────────────────────────
+//  SWIPE-TO-DISMISS
+// ─────────────────────────────────────
+
+
+
+  // Wire swipe-to-dismiss
   var calSheet      = document.querySelector('#calOverlay .bottom-sheet');
-  var settingsSheet = document.querySelector('#settingsOverlay .bottom-sheet, #settingsOverlay .settings-panel');
-  if (!settingsSheet) settingsSheet = document.querySelector('#settingsOverlay > div');
+  var settingsSheet = document.querySelector('#settingsOverlay .settings-panel');
   if (calSheet)      initSwipeDismiss(calSheet,      function(){ document.getElementById('calOverlay').classList.remove('open'); });
   if (settingsSheet) initSwipeDismiss(settingsSheet, function(){ document.getElementById('settingsOverlay').classList.remove('open'); });
-
 
 // ── DARK MODE ──
 (function() {
@@ -790,9 +735,7 @@ renderCards();
     saveSettings(s);
     applyTheme(s.dark);
   };
-  // Apply on load
   var s = getSettings();
-  // Also check OS preference as fallback
   var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   var isDark = typeof s.dark !== 'undefined' ? s.dark : prefersDark;
   if (isDark) document.documentElement.classList.add('dark');

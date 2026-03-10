@@ -31,7 +31,7 @@ README.md       This file
 A Push / Pull / Legs / Abs workout tracker with a dark high-contrast aesthetic (Barlow Condensed + Barlow fonts).
 
 - **Push, Pull, Legs, Abs panels** — exercises with sets/reps, rest times, target muscles, expandable technique notes. Full warmup sequence on Legs panel
-- **Log tab** — streak cards, navigable monthly calendar with tap-to-edit day popout, 7-day muscle volume bar chart, session history (last 60 entries with delete)
+- **Log tab** — streak cards, navigable monthly calendar with tap-to-edit day popout, session history (last 60 entries with delete)
 - **Multi-type logging** — a single day can log multiple types (e.g. Push + Abs)
 - **Desktop sidebar** on screens >= 768px; bottom nav on mobile
 - Daily rotating motivational quote in the top bar
@@ -110,17 +110,17 @@ Dark mode is toggled via a moon/sun button in the header of each light-theme pag
 
 ### Calendar dot colors
 
-All light-theme pages share the same dot conventions:
+All light-theme pages share the same dot conventions. Colors were chosen to be distinguishable across red-green (deuteranopia/protanopia) and blue-purple (tritanopia) colorblindness:
 
 | Dot | Color | Meaning |
 |---|---|---|
-| Workout | `#6C5CE7` indigo | Logged workout |
-| Chores / Due | `#2D9CDB` blue | Chore logged or item due |
+| Workout | `#E8A020` amber | Logged workout |
+| Chores / Due | `#2BA896` teal | Chore logged or item due |
 | Nommie / Completed | `#C4714A` terracotta (accent) | Restaurant visit or chore completed |
 | Overdue | `#E07B27` orange | Missed or overdue item |
-| Rest | `#CCCCCC` gray | Rest day |
+| Rest | `#AAAAAA` gray | Rest day |
 
-Colors were chosen to be distinguishable for red-green colorblindness (deuteranopia/protanopia). `fitness.html` uses its own per-type dot colors (push/pull/legs/abs) and is exempt.
+Amber, teal, terracotta, orange, and gray are all distinguishable under deuteranopia, protanopia, and tritanopia. `fitness.html` uses its own per-type dot colors (push/pull/legs/abs) and is exempt.
 
 ---
 
@@ -159,6 +159,9 @@ Colors were chosen to be distinguishable for red-green colorblindness (deuterano
 
 ## Changelog
 
+### v1.4.5 — Bug fixes + tritanopia-safe colors + home page cleanup
+Three fixes in one pass. (1) Media tracker card removed from `index.html` home dashboard — the card definition and its `lifetracker_v1_media` read were still present after `media.html` was deleted in v1.4.1. (2) Dark mode toggle on the home page was broken: the swipe-to-dismiss utility had been accidentally injected as inline content inside the `<script src>` tag for Lucide (which browsers ignore), so `initSwipeDismiss` was never defined and the toggle wiring ran outside any script tag entirely. Fixed by moving all JS into the main script block with a self-closing external script tag. (3) Calendar dot and chip colors updated for tritanopia (blue-purple colorblindness) safety: workout dot changed from indigo (`#6C5CE7`) to amber (`#E8A020`), chore/due dot changed from blue (`#2D9CDB`) to teal (`#2BA896`). The full set of amber, teal, terracotta, orange, and gray is now distinguishable under deuteranopia, protanopia, and tritanopia. Updated across `index.html`, `chores.html`, and `nommies.html`.
+
 ### v1.4.4 — Dark mode
 Dark mode added to `index.html`, `chores.html`, and `nommies.html` (fitness is always dark and excluded). A moon/sun toggle button sits in each page's top-right header. Clicking it toggles the `html.dark` class and saves the preference to `lifetracker_v1_settings` as `{ dark: bool }`. On first visit, the OS `prefers-color-scheme` setting is used as the default. Dark palette uses warm brown-blacks (`#1C1917` bg, `#28251F` card, `#3A3630` border) to match the app's existing warm character. The accent is nudged slightly brighter to `#D4845A` for better contrast on dark surfaces. All semantic colors (overdue red, priority states, status badges, chip active states) have dark-mode variants. The `lifetracker_v1_settings` key is updated to `{ name, dark }`, and `saveSettings` merges keys rather than replacing the object, so name and dark preference never clobber each other.
 
@@ -169,7 +172,7 @@ Dark mode added to `index.html`, `chores.html`, and `nommies.html` (fitness is a
 All bottom sheets and modals can now be dismissed by dragging down. Dragging past 30% of the sheet's height, or a fast flick, closes it with a matching animation; releasing before the threshold snaps it back. A pill-shaped drag handle is shown at the top of every sheet as a visual cue. Sheets covered: `index.html` (calendar day sheet, settings panel), `chores.html` (add/edit modal), `nommies.html` (add/edit, import, manage lists, and Elo modals), `fitness.html` (calendar day popout, confirm/delete modal). All pages also now set `maximum-scale=1.0, user-scalable=no` in the viewport meta tag to prevent accidental pinch-zoom.
 
 ### v1.4.1 — Colorblind-safe palette + remove media tracker
-`media.html` removed. Color scheme audited for red-green colorblindness (deuteranopia/protanopia). `index.html` calendar: workout dot changed from orange-red to indigo (`#6C5CE7`), chore dot updated to a clearer blue (`#2D9CDB`), keeping nommie as terracotta and rest as gray. `chores.html`: priority dots changed from red/yellow/green to orange/blue/gray (high/medium/low); calendar overdue dot changed from red to orange (`#E07B27`); "due" day-detail status changed from yellow to blue. All light-theme calendars now share the same dot conventions. Light background softened from `#F9F7F4` to `#F2EFE9` and card from `#FFFFFF` to `#FDFCFA`.
+`media.html` removed. Color scheme audited for red-green colorblindness (deuteranopia/protanopia). `index.html` calendar: workout dot changed from orange-red to indigo, chore dot updated to blue, keeping nommie as terracotta and rest as gray. `chores.html`: priority dots changed from red/yellow/green to orange/blue/gray (high/medium/low); calendar overdue dot changed from red to orange (`#E07B27`); "due" day-detail status changed from yellow to blue. Light background softened from `#F9F7F4` to `#F2EFE9` and card from `#FFFFFF` to `#FDFCFA`.
 
 ### v1.4.0 — Chores overhaul
 `chores.html` fully rebuilt. New data model (v2 schema) supports recurring chores (daily, weekly by day, every N days, monthly) and one-time tasks, each with emoji, category, priority (low/medium/high), notes, and active/archived status. Four tabs: Today (overdue banner, priority sorting, inline completion notes, upcoming section), Calendar (dots for completions and missed chores, tap-to-view day detail sheet), Log (full history with filter and per-entry delete), Manage (active/archived filter, drag-to-reorder, full edit/archive/delete). Stats strip shows best streak, monthly completions, and 7-day on-time rate. Migration function converts all existing v1 data automatically. `lifetracker_v1_chores` schema updated to `{ version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] } }`.
