@@ -7,7 +7,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Chores — LifeTracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -95,9 +95,9 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .chore-overdue-tag { font-size: 11px; color: var(--red); font-weight: 500; }
 .chore-upcoming-tag { font-size: 11px; color: var(--text-muted); }
 .priority-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.priority-dot.high { background: var(--red); }
-.priority-dot.medium { background: var(--yellow); }
-.priority-dot.low { background: var(--green); }
+.priority-dot.high { background: #E07B27; }
+.priority-dot.medium { background: #2D9CDB; }
+.priority-dot.low { background: #AAAAAA; }
 
 /* Completion note expansion */
 .completion-expand {
@@ -139,8 +139,8 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .cal-dots { display: flex; gap: 2px; justify-content: center; }
 .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
 .cal-dot.completed { background: var(--accent); }
-.cal-dot.due { background: var(--text-muted); }
-.cal-dot.overdue { background: var(--red); }
+.cal-dot.due { background: #2D9CDB; }
+.cal-dot.overdue { background: #E07B27; }
 
 /* Day popout */
 .day-sheet { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); margin-top: 12px; padding: 16px; }
@@ -154,7 +154,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .day-entry-status { font-size: 11px; border-radius: 6px; padding: 2px 7px; font-weight: 500; white-space: nowrap; }
 .day-entry-status.done { background: var(--accent-light); color: var(--accent); }
 .day-entry-status.missed { background: var(--red-light); color: var(--red); }
-.day-entry-status.due { background: var(--yellow-light); color: var(--yellow); }
+.day-entry-status.due { background: #E8F4FB; color: #2D9CDB; }
 
 /* Log */
 .log-filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
@@ -229,6 +229,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .modal { background: var(--card); width: 100%; max-width: 430px; border-radius: 24px 24px 0 0; padding: 24px 24px 40px; max-height: 90vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
 .overlay.open .modal { transform: translateY(0); }
 .panel-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
 .modal-title { font-family: var(--font-head); font-size: 22px; margin-bottom: 20px; }
 .field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; }
 .field-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 16px; }
@@ -251,7 +252,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .priority-btn { flex: 1; padding: 8px; text-align: center; border: 1.5px solid var(--border); border-radius: 10px; font-size: 12px; font-weight: 500; cursor: pointer; background: var(--bg); transition: all 0.15s; font-family: var(--font-body); }
 .priority-btn.active.high { background: var(--red-light); border-color: var(--red); color: var(--red); }
 .priority-btn.active.medium { background: var(--yellow-light); border-color: var(--yellow); color: var(--yellow); }
-.priority-btn.active.low { background: var(--green-light); border-color: var(--green); color: var(--green); }
+.priority-btn.active.low { background: #F0F0F0; border-color: #AAAAAA; color: #666666; }
 .btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; margin-top: 4px; }
 .btn-primary:active { opacity: 0.85; }
 .btn-secondary { width: 100%; background: none; color: var(--text-muted); border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-family: var(--font-body); font-size: 14px; cursor: pointer; margin-top: 8px; transition: all 0.15s; }
@@ -355,6 +356,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 <div class="overlay" id="choreOverlay" onclick="overlayClickOutside(event,'choreOverlay')">
   <div class="modal">
     <div class="panel-handle"></div>
+    <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitle">New Chore</div>
 
     <input type="hidden" id="editId">
@@ -1297,6 +1299,58 @@ function showToast(msg) {
 updateStats();
 setTab('today');
 if (window.lucide) lucide.createIcons();
+
+// ─────────────────────────────────────
+//  SWIPE-TO-DISMISS
+// ─────────────────────────────────────
+function initSwipeDismiss(sheetEl, closeFn) {
+  var startY = 0, curY = 0, dragging = false, startTime = 0;
+  var THRESHOLD = 0.30;
+  var VELOCITY  = 0.5;
+
+  sheetEl.addEventListener('touchstart', function(e) {
+    var touch = e.touches[0];
+    var rect  = sheetEl.getBoundingClientRect();
+    if (touch.clientY - rect.top > 80) return;
+    startY = touch.clientY;
+    curY   = touch.clientY;
+    dragging = true;
+    startTime = Date.now();
+    sheetEl.style.transition = 'none';
+  }, { passive: true });
+
+  sheetEl.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    curY = e.touches[0].clientY;
+    var dy = Math.max(0, curY - startY);
+    sheetEl.style.transform = 'translateY(' + dy + 'px)';
+  }, { passive: true });
+
+  sheetEl.addEventListener('touchend', function() {
+    if (!dragging) return;
+    dragging = false;
+    var dy       = Math.max(0, curY - startY);
+    var elapsed  = Math.max(Date.now() - startTime, 1);
+    var velocity = dy / elapsed;
+    var dismiss  = dy > sheetEl.offsetHeight * THRESHOLD || velocity > VELOCITY;
+
+    if (dismiss) {
+      sheetEl.style.transition = 'transform 0.25s cubic-bezier(0.32,0.72,0,1)';
+      sheetEl.style.transform  = 'translateY(100%)';
+      setTimeout(closeFn, 240);
+    } else {
+      sheetEl.style.transition = 'transform 0.3s cubic-bezier(0.32,0.72,0,1)';
+      sheetEl.style.transform  = '';
+    }
+  });
+}
+
+  // Swipe-to-dismiss for chore modal
+  var choreModal = document.querySelector('#choreOverlay .modal');
+  if (choreModal) initSwipeDismiss(choreModal, function() {
+    document.getElementById('choreOverlay').classList.remove('open');
+  });
+
 </script>
 </body>
 </html>

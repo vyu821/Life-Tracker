@@ -11,7 +11,6 @@ index.html      Home dashboard with calendar and tracker cards
 fitness.html    PPL workout tracker (Push / Pull / Legs / Abs)
 nommies.html    Restaurant tracker with map and Elo ranking
 chores.html     Chore and task tracker with rich scheduling
-media.html      Movies, TV shows, and books tracker
 README.md       This file
 ```
 
@@ -68,13 +67,6 @@ A full-featured chore and task tracker with rich scheduling, four tabs, and a co
 
 - Data stored in `lifetracker_v1_chores`
 
-### Media (`media.html`)
-
-- Three tabs: Movies, TV, Books. Each entry: title, creator, genre, rating, status, date, notes. TV tracks seasons
-- Filter by status, search by title or creator
-- Stats strip: total, completed, added this year, average rating
-- Data stored in `lifetracker_v1_media`
-
 ---
 
 ## Design System
@@ -94,6 +86,20 @@ A full-featured chore and task tracker with rich scheduling, four tabs, and a co
 
 `fitness.html` uses its own dark theme: Barlow Condensed + Barlow, `#0d0d0d` background, colored accents per day type.
 
+### Calendar dot colors
+
+All light-theme pages share the same dot conventions:
+
+| Dot | Color | Meaning |
+|---|---|---|
+| Workout | `#6C5CE7` indigo | Logged workout |
+| Chores / Due | `#2D9CDB` blue | Chore logged or item due |
+| Nommie / Completed | `#C4714A` terracotta (accent) | Restaurant visit or chore completed |
+| Overdue | `#E07B27` orange | Missed or overdue item |
+| Rest | `#CCCCCC` gray | Rest day |
+
+Colors were chosen to be distinguishable for red-green colorblindness (deuteranopia/protanopia). `fitness.html` uses its own per-type dot colors (push/pull/legs/abs) and is exempt.
+
 ---
 
 ## localStorage Keys
@@ -103,9 +109,8 @@ A full-featured chore and task tracker with rich scheduling, four tabs, and a co
 | `ppl_v3` | `fitness.html`, `index.html` | `{ 'YYYY-MM-DD': { types:[], rest:bool } }` |
 | `lifetracker_v1_restaurants` | `nommies.html`, `index.html` | `{ restaurants: [...] }` |
 | `lifetracker_v1_chores` | `chores.html`, `index.html` | `{ version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] } }` |
-| `lifetracker_v1_media` | `media.html`, `index.html` | `{ movies: [...], tv: [...], books: [...] }` |
 | `lifetracker_v1_calendar` | `index.html` | `{ 'YYYY-MM-DD': { types:[], note:'' } }` |
-| `lifetracker_v1_card_order` | `index.html` | `['nommies','fitness','chores','media']` |
+| `lifetracker_v1_card_order` | `index.html` | `['nommies','fitness','chores']` |
 | `lifetracker_v1_settings` | `index.html` | `{ name: '' }` |
 
 ---
@@ -117,6 +122,7 @@ A full-featured chore and task tracker with rich scheduling, four tabs, and a co
 - Leaflet.js: `cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js`
 - Google Fonts: DM Serif Display + DM Sans (light pages), Barlow Condensed + Barlow (fitness)
 - No frameworks, no npm, no build step
+- All viewports lock to `user-scalable=no, maximum-scale=1.0` to prevent accidental pinch-zoom
 
 ---
 
@@ -129,6 +135,12 @@ A full-featured chore and task tracker with rich scheduling, four tabs, and a co
 ---
 
 ## Changelog
+
+### v1.4.2 — Swipe-to-dismiss + pinch-zoom lock
+All bottom sheets and modals can now be dismissed by dragging down. Dragging past 30% of the sheet's height, or a fast flick, closes it with a matching animation; releasing before the threshold snaps it back. A pill-shaped drag handle is shown at the top of every sheet as a visual cue. Sheets covered: `index.html` (calendar day sheet, settings panel), `chores.html` (add/edit modal), `nommies.html` (add/edit, import, manage lists, and Elo modals), `fitness.html` (calendar day popout, confirm/delete modal). All pages also now set `maximum-scale=1.0, user-scalable=no` in the viewport meta tag to prevent accidental pinch-zoom.
+
+### v1.4.1 — Colorblind-safe palette + remove media tracker
+`media.html` removed. Color scheme audited for red-green colorblindness (deuteranopia/protanopia). `index.html` calendar: workout dot changed from orange-red to indigo (`#6C5CE7`), chore dot updated to a clearer blue (`#2D9CDB`), keeping nommie as terracotta and rest as gray. `chores.html`: priority dots changed from red/yellow/green to orange/blue/gray (high/medium/low); calendar overdue dot changed from red to orange (`#E07B27`); "due" day-detail status changed from yellow to blue. All light-theme calendars now share the same dot conventions.
 
 ### v1.4.0 — Chores overhaul
 `chores.html` fully rebuilt. New data model (v2 schema) supports recurring chores (daily, weekly by day, every N days, monthly) and one-time tasks, each with emoji, category, priority (low/medium/high), notes, and active/archived status. Four tabs: Today (overdue banner, priority sorting, inline completion notes, upcoming section), Calendar (dots for completions and missed chores, tap-to-view day detail sheet), Log (full history with filter and per-entry delete), Manage (active/archived filter, drag-to-reorder, full edit/archive/delete). Stats strip shows best streak, monthly completions, and 7-day on-time rate. Migration function converts all existing v1 data automatically. `lifetracker_v1_chores` schema updated to `{ version: 2, chores: [...], completions: { 'YYYY-MM-DD': [{id, note}] } }`.
@@ -161,4 +173,4 @@ Replaced generic fitness page with Push / Pull / Legs tracker (dark theme). Adde
 Pinned Lucide to `@0.383.0` via jsDelivr. Added `if(window.lucide)` guard before every `lucide.createIcons()` call.
 
 ### v1.0.0 — Initial build
-Home dashboard, habits tracker, fitness tracker, restaurant tracker, media tracker, travel tracker. Shared design system established.
+Home dashboard, habits tracker, fitness tracker, restaurant tracker, travel tracker. Shared design system established.

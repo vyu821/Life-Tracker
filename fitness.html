@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -275,6 +275,7 @@ body.day-log .top-bar h1{color:var(--log);}
 .cal-popout{background:var(--surface);border-radius:16px 16px 0 0;border-top:1px solid var(--border);
   padding:20px 16px calc(20px + var(--safe-bottom));width:100%;animation:slideUp 0.22s ease;}
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.cal-popout-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 12px;}
 .cal-popout-date{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;
   text-transform:uppercase;letter-spacing:1px;color:var(--text);margin-bottom:14px;}
 .cal-popout-types{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
@@ -412,6 +413,7 @@ body.day-log .top-bar h1{color:var(--log);}
 <!-- CALENDAR DAY POPOUT -->
 <div class="cal-popout-overlay" id="calPopout" onclick="closeCalPopout(event)">
   <div class="cal-popout">
+    <div class="cal-popout-handle"></div>
     <div class="cal-popout-date" id="calPopoutDate"></div>
     <div class="cal-popout-types" id="calPopoutTypes">
       <button class="backlog-type-btn t-push" data-type="push" onclick="togglePopoutType(this)">Push</button>
@@ -429,6 +431,7 @@ body.day-log .top-bar h1{color:var(--log);}
 
 <div class="modal-overlay" id="modal">
   <div class="modal">
+    <div class="cal-popout-handle"></div>
     <h3 id="modalTitle"></h3><p id="modalBody"></p>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
@@ -714,6 +717,62 @@ function showToast(msg){var t=document.getElementById('toast');t.textContent=msg
 updateMultiBadges();
 initCal();
 
+
+
+// ─────────────────────────────────────
+//  SWIPE-TO-DISMISS
+// ─────────────────────────────────────
+function initSwipeDismiss(sheetEl, closeFn) {
+  var startY = 0, curY = 0, dragging = false, startTime = 0;
+  var THRESHOLD = 0.30;
+  var VELOCITY  = 0.5;
+
+  sheetEl.addEventListener('touchstart', function(e) {
+    var touch = e.touches[0];
+    var rect  = sheetEl.getBoundingClientRect();
+    if (touch.clientY - rect.top > 80) return;
+    startY = touch.clientY;
+    curY   = touch.clientY;
+    dragging = true;
+    startTime = Date.now();
+    sheetEl.style.transition = 'none';
+  }, { passive: true });
+
+  sheetEl.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    curY = e.touches[0].clientY;
+    var dy = Math.max(0, curY - startY);
+    sheetEl.style.transform = 'translateY(' + dy + 'px)';
+  }, { passive: true });
+
+  sheetEl.addEventListener('touchend', function() {
+    if (!dragging) return;
+    dragging = false;
+    var dy       = Math.max(0, curY - startY);
+    var elapsed  = Math.max(Date.now() - startTime, 1);
+    var velocity = dy / elapsed;
+    var dismiss  = dy > sheetEl.offsetHeight * THRESHOLD || velocity > VELOCITY;
+
+    if (dismiss) {
+      sheetEl.style.transition = 'transform 0.25s cubic-bezier(0.32,0.72,0,1)';
+      sheetEl.style.transform  = 'translateY(100%)';
+      setTimeout(closeFn, 240);
+    } else {
+      sheetEl.style.transition = 'transform 0.3s cubic-bezier(0.32,0.72,0,1)';
+      sheetEl.style.transform  = '';
+    }
+  });
+}
+
+  // Swipe-to-dismiss for fitness modals
+  var calPopoutSheet = document.querySelector('#calPopout .cal-popout');
+  if (calPopoutSheet) initSwipeDismiss(calPopoutSheet, function() {
+    document.getElementById('calPopout').classList.remove('open');
+  });
+  var confirmModal = document.querySelector('#modal .modal');
+  if (confirmModal) initSwipeDismiss(confirmModal, function() {
+    document.getElementById('modal').classList.remove('open');
+  });
 
 </script>
 
