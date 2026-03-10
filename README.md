@@ -119,6 +119,9 @@ A restaurant tracker with four tabs: List, Map, Ranking, Stats.
 
 ## Changelog
 
+### v1.3.2 — Fitness log tab cleanup + calendar Sun-first
+Removed the "Muscles (last 7 days)" bar chart and session history list from the Log tab in `fitness.html` — both are redundant given the home dashboard calendar. `renderMuscleSummary` and `renderHistory` functions removed entirely; `refreshLog` simplified to just `renderCal` + `calcStreaks`. Calendar header and start-of-week logic changed from Monday-first to Sunday-first.
+
 ### v1.3.1 — Hunter Stats removed
 `hunter-stats.html` deleted. All references removed from `fitness.html`: Hunter button, sidebar link, bottom nav button, associated CSS. `switchDay` nav logic simplified.
 

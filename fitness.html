@@ -396,11 +396,6 @@ body.day-log .top-bar h1{color:var(--log);}
   </div>
   <div class="cal-grid" id="calGrid"></div>
 
-  <div class="log-section-title" style="margin-top:4px">Muscles (last 7 days)</div>
-  <div class="muscle-summary" id="muscleSummary"></div>
-
-  <div class="log-section-title">History</div>
-  <div id="historyList"></div>
 </div>
 
 </div><!-- /.scroll-area -->
@@ -569,9 +564,9 @@ function renderCal(){
   var today=todayStr();
   var grid=document.getElementById('calGrid');
   var html='';
-  ['M','T','W','T','F','S','S'].forEach(function(d){html+='<div class="cal-dow">'+d+'</div>';});
+  ['S','M','T','W','T','F','S'].forEach(function(d){html+='<div class="cal-dow">'+d+'</div>';});
   var first=new Date(calYear,calMo,1);
-  var startDow=(first.getDay()+6)%7;
+  var startDow=first.getDay();
   var dim=new Date(calYear,calMo+1,0).getDate();
   var prev=new Date(calYear,calMo,0).getDate();
   for(var i=0;i<startDow;i++)html+='<div class="cal-day other-month">'+(prev-startDow+i+1)+'</div>';
@@ -692,54 +687,14 @@ function calcStreaks(){
   var dateSet={};dates.forEach(function(ds){dateSet[ds]=true;});
   var streak=0;var check=new Date(today);
   while(true){var ds=dateStr(check);if(dateSet[ds]){streak++;check.setDate(check.getDate()-1);}else if(ds===dateStr(today)){check.setDate(check.getDate()-1);}else break;}
-  var dow=(today.getDay()+6)%7;var wk=0;
+  var dow=today.getDay();var wk=0;
   for(var i=0;i<=dow;i++){var d=new Date(today);d.setDate(today.getDate()-i);if(dateSet[dateStr(d)])wk++;}
   document.getElementById('streakCurrent').textContent=streak;
   document.getElementById('streakTotal').textContent=dates.length;
   document.getElementById('streakWeek').textContent=wk;
 }
 
-function renderMuscleSummary(){
-  var data=getData();
-  var today=new Date();today.setHours(0,0,0,0);
-  var counts={};
-  for(var i=0;i<7;i++){
-    var d=new Date(today);d.setDate(today.getDate()-i);
-    var ds=dateStr(d);
-    var e=getEntry(data,ds);
-    if(e&&!e.rest&&e.types){
-      e.types.forEach(function(t){
-        if(MUSCLE_GROUPS[t])MUSCLE_GROUPS[t].forEach(function(m){counts[m]=(counts[m]||0)+1;});
-      });
-    }
-  }
-  var muscles=Object.keys(MUSCLE_COLORS);
-  var max=0;muscles.forEach(function(m){if((counts[m]||0)>max)max=counts[m]||0;});
-  if(max===0)max=1;
-  var html='';
-  muscles.forEach(function(m){var c=counts[m]||0;var pct=Math.round(c/max*100);html+='<div class="muscle-row"><div class="muscle-name">'+m+'</div><div class="muscle-bar-wrap"><div class="muscle-bar" style="width:'+pct+'%;background:'+MUSCLE_COLORS[m]+'"></div></div><div class="muscle-count">'+c+'x</div></div>';});
-  if(!html)html='<div class="no-history">No sessions in the last 7 days</div>';
-  document.getElementById('muscleSummary').innerHTML=html;
-}
 
-function renderHistory(){
-  var data=getData();
-  var sorted=Object.keys(data).sort(function(a,b){return b.localeCompare(a);});
-  if(!sorted.length){document.getElementById('historyList').innerHTML='<div class="no-history">No sessions logged yet.</div>';return;}
-  var html='';
-  sorted.slice(0,60).forEach(function(ds){
-    var e=getEntry(data,ds);
-    if(!e)return;
-    if(e.rest){
-      html+='<div class="history-entry"><div><div class="history-day-label"><span class="multi-tag t-rest">Rest</span></div><div class="history-date">'+fmtDate(ds)+'</div></div><button class="btn-del" onclick="deleteEntry(\''+ds+'\')">&#10005;</button></div>';
-    } else {
-      var tags=e.types.map(function(t){return '<span class="multi-tag t-'+t+'">'+TYPE_LABELS[t]+'</span>';}).join('');
-      var muscles=e.types.map(function(t){return DAY_MUSCLES[t]||'';}).join(' · ');
-      html+='<div class="history-entry"><div><div class="history-day-label">'+tags+'</div><div class="history-date">'+fmtDate(ds)+'</div><div class="history-muscles">'+muscles+'</div></div><button class="btn-del" onclick="deleteEntry(\''+ds+'\')">&#10005;</button></div>';
-    }
-  });
-  document.getElementById('historyList').innerHTML=html||'<div class="no-history">No sessions logged yet.</div>';
-}
 
 function deleteEntry(ds){
   openModal('Delete this entry?',fmtDate(ds)+' — this can\'t be undone.',function(){
@@ -747,7 +702,7 @@ function deleteEntry(ds){
   });
 }
 
-function refreshLog(){renderCal();calcStreaks();renderMuscleSummary();renderHistory();}
+function refreshLog(){renderCal();calcStreaks();}
 
 var _mcb=null;
 function openModal(title,body,cb){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').textContent=body;_mcb=cb;document.getElementById('modal').classList.add('open');document.getElementById('modalConfirm').onclick=function(){closeModal();if(_mcb)_mcb();};}
