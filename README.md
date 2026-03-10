@@ -244,3 +244,43 @@ The fitness page was replaced in full. Key changes in the new version:
 - **`← Home` link** added back to the top bar (was present in the previous version, missing from the uploaded file — restored during integration).
 - **Muscle summary + session history** wired back into the Log tab — `renderMuscleSummary()` and `renderHistory()` are now called by `refreshLog()` and their target DOM elements restored. The 7-day muscle volume bar chart and scrollable session history (last 60 entries with delete) both render correctly.
 - `localStorage` key remains `ppl_v3` — all existing workout history is preserved.
+
+### v1.3.0 — Home calendar, chores, file renames, travel removed
+
+**`index.html` — full rewrite**
+
+The home dashboard was rebuilt from scratch with two major additions.
+
+The first is a monthly calendar sitting above the tracker cards. Dots appear automatically by reading existing localStorage data — workout dots come from `ppl_v3`, nommie dots come from restaurant entry dates in `lifetracker_v1_restaurants`. Tapping any day opens a bottom sheet where you can manually log Workout, Chores, Nommie, or Rest for that day, with an optional free-text note. Manual entries are stored in a new key `lifetracker_v1_calendar` and are independent of the per-tracker data. Dot colors: orange for workouts, steel blue for chores, terracotta for nommies, light grey for rest.
+
+The second is drag-to-reorder tracker cards. Each card has a grip handle on the right. On desktop, standard HTML5 drag-and-drop is used. On mobile, a touch handler on the grip handle creates a floating ghost clone and tracks the drag. Dropping reorders the list in place. Order is persisted to `lifetracker_v1_card_order` and restored on every page load. If the saved order doesn't match the current card set (e.g. after a card is added or removed), it falls back to the default order.
+
+The today strip and habit/streak logic were removed. Travel and Habits cards removed. Chores and Nommies cards added.
+
+**`habits.html` → `chores.html`**
+
+The habits tracker was copied to `chores.html` with all user-facing text updated from "Habit"/"Habits" to "Chore"/"Chores" throughout: page title, nav header, modal titles, toast messages, empty states, section labels, and button labels. The `localStorage` key was updated from `lifetracker_v1_habits` to `lifetracker_v1_chores`. The underlying data model (`{ habits: [...], completions: {...} }`) is unchanged — the `habits` array key inside the object was not renamed for simplicity. `habits.html` is retained in the repo as-is for reference.
+
+**`restaurants.html` → `nommies.html`**
+
+File renamed to match the in-app branding. All internal `href` and self-referencing links inside the file updated to `nommies.html`. `index.html` updated to link to `nommies.html`. `restaurants.html` removed. The `localStorage` key `lifetracker_v1_restaurants` is unchanged — all existing data carries over.
+
+**`travel.html` — removed**
+
+Travel tracker removed from the project. The card was dropped from `index.html`.
+
+**`restaurants.html` Leaflet fix (included in this release)**
+
+Leaflet CDN switched from `unpkg.com` to `cdnjs.cloudflare.com` for reliability. A `typeof L === 'undefined'` guard added to `initMap()` so a failed CDN load shows a friendly error message in the map container instead of throwing an uncaught reference error.
+
+### Current file list
+
+| File | Description |
+|---|---|
+| `index.html` | Home dashboard with calendar and tracker cards |
+| `fitness.html` | PPL workout tracker (dark theme) |
+| `hunter-stats.html` | Gamified stats, Solo Leveling theme |
+| `nommies.html` | Restaurant tracker with map, Elo ranking |
+| `chores.html` | Daily/weekly chore tracker |
+| `media.html` | Movies, TV, books tracker |
+| `habits.html` | Original habits tracker (retained, superseded by chores.html) |

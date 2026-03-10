@@ -1,12 +1,13 @@
 <!--
   LifeTracker — Home Dashboard (index.html)
-  localStorage keys read (not written here):
-    lifetracker_v1_restaurants
-    lifetracker_v1_media
-    lifetracker_v1_fitness
-    lifetracker_v1_travel
-    lifetracker_v1_habits
-    lifetracker_v1_settings
+  localStorage keys:
+    lifetracker_v1_settings   → { name }
+    lifetracker_v1_card_order → [id, ...]
+    lifetracker_v1_calendar   → { 'YYYY-MM-DD': { types:[], note:'' } }
+    lifetracker_v1_restaurants (read)
+    lifetracker_v1_chores     (read)
+    ppl_v3                    (read)
+    lifetracker_v1_media      (read)
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -19,243 +20,115 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <style>
-  :root {
-    --bg: #F9F7F4;
-    --card: #FFFFFF;
-    --text: #1A1A1A;
-    --text-muted: #888880;
-    --accent: #C4714A;
-    --accent-light: #F5E8E0;
-    --border: #EDEBE7;
-    --shadow: 0 2px 12px rgba(0,0,0,0.07);
-    --radius: 16px;
-    --font-head: 'DM Serif Display', serif;
-    --font-body: 'DM Sans', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: var(--font-body);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
-  .container {
-    max-width: 430px;
-    margin: 0 auto;
-    padding: 0 20px 40px;
-  }
-  /* Header */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding-top: 52px;
-    padding-bottom: 28px;
-  }
-  .greeting-label {
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .greeting-name {
-    font-family: var(--font-head);
-    font-size: 30px;
-    line-height: 1.1;
-    color: var(--text);
-  }
-  .settings-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-top: 8px;
-    transition: background 0.15s, transform 0.15s;
-    color: var(--text-muted);
-  }
-  .settings-btn:active { transform: scale(0.93); background: var(--accent-light); }
+:root {
+  --bg:#F9F7F4; --card:#FFFFFF; --text:#1A1A1A; --text-muted:#888880;
+  --accent:#C4714A; --accent-light:#F5E8E0; --border:#EDEBE7;
+  --shadow:0 2px 12px rgba(0,0,0,0.07); --radius:16px;
+  --font-head:'DM Serif Display',serif; --font-body:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;}
+.container{max-width:430px;margin:0 auto;padding:0 20px 60px;}
 
-  /* Today strip */
-  .today-strip {
-    background: var(--text);
-    color: #fff;
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 28px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
-  .today-left {}
-  .today-date {
-    font-size: 12px;
-    font-weight: 500;
-    opacity: 0.55;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-  .today-nudge {
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 1.4;
-  }
-  .today-streak {
-    background: var(--accent);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-top:52px;padding-bottom:24px;}
+.greeting-label{font-size:13px;font-weight:500;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.greeting-name{font-family:var(--font-head);font-size:30px;line-height:1.1;}
+.settings-btn{background:var(--card);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:6px;transition:background .15s,transform .15s;color:var(--text-muted);}
+.settings-btn:active{transform:scale(0.93);background:var(--accent-light);}
 
-  /* Section label */
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-  }
+/* Section label */
+.section-label{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;}
 
-  /* Tracker cards */
-  .cards-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 32px;
-  }
-  .tracker-card {
-    background: var(--card);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 20px 20px;
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border: 1px solid var(--border);
-    transition: transform 0.15s, box-shadow 0.15s;
-    cursor: pointer;
-  }
-  .tracker-card:active {
-    transform: scale(0.97);
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-  }
-  .card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: var(--accent-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 22px;
-  }
-  .card-body { flex: 1; min-width: 0; }
-  .card-title {
-    font-family: var(--font-head);
-    font-size: 18px;
-    margin-bottom: 3px;
-    line-height: 1.2;
-  }
-  .card-stat {
-    font-size: 13px;
-    color: var(--text-muted);
-    line-height: 1.4;
-  }
-  .card-arrow {
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
+/* ── CALENDAR ── */
+.cal-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 16px 16px;margin-bottom:28px;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-month-label{font-family:var(--font-head);font-size:19px;color:var(--text);}
+.cal-nav-row{display:flex;gap:4px;}
+.cal-nav-btn{background:none;border:1px solid var(--border);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:14px;transition:all .15s;}
+.cal-nav-btn:active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
+.cal-dow{text-align:center;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);padding-bottom:6px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .12s;position:relative;}
+.cal-cell:hover{background:var(--bg);}
+.cal-cell:active{background:var(--accent-light);}
+.cal-cell.other-month{opacity:.25;pointer-events:none;}
+.cal-num{font-size:12px;font-weight:500;color:var(--text);line-height:1;margin-bottom:3px;}
+.cal-cell.today .cal-num{background:var(--text);color:#fff;border-radius:5px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:600;}
+.cal-dots{display:flex;gap:2px;justify-content:center;height:5px;align-items:center;}
+.cal-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
+.dot-workout{background:#E85D26;}
+.dot-chore{background:#5A8FA8;}
+.dot-nommie{background:var(--accent);}
+.dot-rest{background:#CCCCCC;}
 
-  /* Settings panel */
-  .overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    z-index: 100;
-    backdrop-filter: blur(2px);
-  }
-  .overlay.open { display: flex; align-items: flex-end; justify-content: center; }
-  .settings-panel {
-    background: var(--card);
-    width: 100%;
-    max-width: 430px;
-    border-radius: 24px 24px 0 0;
-    padding: 24px 24px 40px;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  .overlay.open .settings-panel { transform: translateY(0); }
-  .panel-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 20px;
-  }
-  .panel-title {
-    font-family: var(--font-head);
-    font-size: 22px;
-    margin-bottom: 20px;
-  }
-  .field-label {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    display: block;
-  }
-  .field-input {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-family: var(--font-body);
-    font-size: 15px;
-    background: var(--bg);
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.15s;
-    margin-bottom: 20px;
-  }
-  .field-input:focus { border-color: var(--accent); }
-  .btn-save {
-    width: 100%;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 14px;
-    font-family: var(--font-body);
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.15s;
-  }
-  .btn-save:active { opacity: 0.85; transform: scale(0.98); }
+.cal-legend{display:flex;flex-wrap:wrap;gap:12px;padding-top:12px;border-top:1px solid var(--border);margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);}
+.legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* ── CALENDAR POPOUT ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;backdrop-filter:blur(2px);align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.bottom-sheet{background:var(--card);width:100%;max-width:430px;border-radius:24px 24px 0 0;padding:24px 24px 44px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
+.overlay.open .bottom-sheet{transform:translateY(0);}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+.sheet-date{font-family:var(--font-head);font-size:20px;margin-bottom:4px;}
+.sheet-subtitle{font-size:12px;color:var(--text-muted);margin-bottom:20px;}
+.sheet-section{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.chip{padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;background:var(--bg);color:var(--text-muted);transition:all .15s;user-select:none;}
+.chip:active{transform:scale(0.95);}
+.chip.on-workout{background:#FFF0EC;border-color:#E85D26;color:#E85D26;}
+.chip.on-chore{background:#EEF4F7;border-color:#5A8FA8;color:#2D6A85;}
+.chip.on-nommie{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+.chip.on-rest{background:#F4F4F4;border-color:#999;color:#555;}
+.note-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:14px;background:var(--bg);color:var(--text);outline:none;resize:none;transition:border-color .15s;margin-bottom:20px;line-height:1.5;}
+.note-input:focus{border-color:var(--accent);}
+.sheet-actions{display:flex;gap:8px;}
+.btn-primary{flex:1;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.btn-primary:active{opacity:.85;}
+.btn-ghost{background:none;border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-family:var(--font-body);font-size:14px;color:var(--text-muted);cursor:pointer;transition:all .15s;}
+.btn-ghost:active{border-color:#c0392b;color:#c0392b;}
+.btn-ghost.hidden{display:none;}
+
+/* ── TRACKER CARDS ── */
+.cards-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.reorder-hint{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;}
+.cards-list{display:flex;flex-direction:column;gap:10px;}
+
+.tracker-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 14px 16px 16px;text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px;border:1.5px solid var(--border);transition:transform .15s,box-shadow .15s,opacity .15s;user-select:none;-webkit-user-select:none;position:relative;}
+.tracker-card.tappable:active{transform:scale(0.97);box-shadow:0 1px 6px rgba(0,0,0,.05);}
+.tracker-card.dragging{opacity:.45;box-shadow:0 10px 30px rgba(0,0,0,.15);transform:scale(1.02);}
+.tracker-card.drag-over{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+.card-icon{width:46px;height:46px;border-radius:12px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:21px;}
+.card-body{flex:1;min-width:0;}
+.card-title{font-family:var(--font-head);font-size:17px;margin-bottom:2px;line-height:1.2;}
+.card-stat{font-size:12px;color:var(--text-muted);line-height:1.4;}
+.card-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.drag-handle{color:var(--border);cursor:grab;padding:6px 4px;border-radius:6px;display:flex;align-items:center;transition:color .15s;touch-action:none;}
+.drag-handle:hover{color:var(--text-muted);}
+.drag-handle:active{cursor:grabbing;}
+.card-arrow{color:var(--border);}
+
+/* Settings */
+.settings-panel{background:var(--card);width:100%;max-width:430px;border-radius:24px 24px 0 0;padding:24px 24px 44px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
+.overlay.open .settings-panel{transform:translateY(0);}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+.panel-title{font-family:var(--font-head);font-size:22px;margin-bottom:20px;}
+.field-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;display:block;}
+.field-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:15px;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s;margin-bottom:20px;}
+.field-input:focus{border-color:var(--accent);}
+.btn-save{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;}
+
+/* Toast */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(8px);background:rgba(26,26,26,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap;backdrop-filter:blur(4px);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
 <div class="container">
+
   <div class="header">
     <div>
       <div class="greeting-label" id="timeGreeting">Good morning</div>
@@ -266,61 +139,66 @@
     </button>
   </div>
 
-  <div class="today-strip" id="todayStrip">
-    <div class="today-left">
-      <div class="today-date" id="todayDate"></div>
-      <div class="today-nudge" id="todayNudge">Loading your day...</div>
+  <!-- CALENDAR -->
+  <div class="section-label">Calendar</div>
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <div class="cal-nav-row">
+        <button class="cal-nav-btn" onclick="calNav(-1)">&#8592;</button>
+        <button class="cal-nav-btn" onclick="calNav(1)">&#8594;</button>
+      </div>
     </div>
-    <div class="today-streak" id="streakBadge" style="display:none"></div>
+    <div class="cal-dow-row">
+      <div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div>
+      <div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
+      <div class="cal-dow">S</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#E85D26"></div>Workout</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#5A8FA8"></div>Chores</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Nommie</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#CCC"></div>Rest</div>
+    </div>
   </div>
 
-  <div class="section-label">Your trackers</div>
-  <div class="cards-grid">
-    <a class="tracker-card" href="restaurants.html">
-      <div class="card-icon">🍽️</div>
-      <div class="card-body">
-        <div class="card-title">Restaurants</div>
-        <div class="card-stat" id="stat-restaurants">Loading...</div>
-      </div>
-      <div class="card-arrow"><i data-lucide="chevron-right" width="18" height="18"></i></div>
-    </a>
-    <a class="tracker-card" href="media.html">
-      <div class="card-icon">🎬</div>
-      <div class="card-body">
-        <div class="card-title">Media</div>
-        <div class="card-stat" id="stat-media">Loading...</div>
-      </div>
-      <div class="card-arrow"><i data-lucide="chevron-right" width="18" height="18"></i></div>
-    </a>
-    <a class="tracker-card" href="fitness.html">
-      <div class="card-icon">💪</div>
-      <div class="card-body">
-        <div class="card-title">Fitness</div>
-        <div class="card-stat" id="stat-fitness">Loading...</div>
-      </div>
-      <div class="card-arrow"><i data-lucide="chevron-right" width="18" height="18"></i></div>
-    </a>
-    <a class="tracker-card" href="travel.html">
-      <div class="card-icon">✈️</div>
-      <div class="card-body">
-        <div class="card-title">Travel</div>
-        <div class="card-stat" id="stat-travel">Loading...</div>
-      </div>
-      <div class="card-arrow"><i data-lucide="chevron-right" width="18" height="18"></i></div>
-    </a>
-    <a class="tracker-card" href="habits.html">
-      <div class="card-icon">✅</div>
-      <div class="card-body">
-        <div class="card-title">Habits</div>
-        <div class="card-stat" id="stat-habits">Loading...</div>
-      </div>
-      <div class="card-arrow"><i data-lucide="chevron-right" width="18" height="18"></i></div>
-    </a>
+  <!-- TRACKER CARDS -->
+  <div class="cards-header">
+    <div class="section-label" style="margin-bottom:0">Your trackers</div>
+    <div class="reorder-hint">
+      <i data-lucide="grip-vertical" width="12" height="12"></i>
+      drag to reorder
+    </div>
+  </div>
+  <div class="cards-list" id="cardsList"></div>
+
+</div>
+
+<!-- Calendar day popout -->
+<div class="overlay" id="calOverlay" onclick="overlayClick(event,'calOverlay')">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-date" id="sheetDate"></div>
+    <div class="sheet-subtitle" id="sheetSubtitle">Tap to log what happened</div>
+    <div class="sheet-section">What happened?</div>
+    <div class="chip-row">
+      <div class="chip" data-type="workout" onclick="toggleChip(this)">💪 Workout</div>
+      <div class="chip" data-type="chore"   onclick="toggleChip(this)">🧹 Chores</div>
+      <div class="chip" data-type="nommie"  onclick="toggleChip(this)">🍽️ Nommie</div>
+      <div class="chip" data-type="rest"    onclick="toggleChip(this)">😴 Rest</div>
+    </div>
+    <div class="sheet-section">Note (optional)</div>
+    <textarea class="note-input" id="sheetNote" rows="2" placeholder="e.g. Push day, cleaned kitchen, tried new ramen spot…"></textarea>
+    <div class="sheet-actions">
+      <button class="btn-ghost hidden" id="sheetDelBtn" onclick="deleteCalDay()">Delete</button>
+      <button class="btn-primary" onclick="saveCalDay()">Save</button>
+    </div>
   </div>
 </div>
 
 <!-- Settings overlay -->
-<div class="overlay" id="settingsOverlay" onclick="closeSettingsIfOutside(event)">
+<div class="overlay" id="settingsOverlay" onclick="overlayClick(event,'settingsOverlay')">
   <div class="settings-panel">
     <div class="panel-handle"></div>
     <div class="panel-title">Settings</div>
@@ -330,175 +208,459 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-  if(window.lucide) lucide.createIcons();
+// ─────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────
+const pad = n => n < 10 ? '0'+n : ''+n;
+const dateKey = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayKey = () => dateKey(new Date());
 
-  // Greet
-  function initGreeting() {
-    const h = new Date().getHours();
-    const label = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    document.getElementById('timeGreeting').textContent = label;
-    const settings = JSON.parse(localStorage.getItem('lifetracker_v1_settings') || '{}');
-    const name = settings.name || '';
-    document.getElementById('greetingName').textContent = name ? `Hey, ${name}.` : 'Welcome back.';
+function getLS(key, fallback){
+  try{ return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+  catch(e){ return fallback; }
+}
+function setLS(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtFull(ds){
+  const [y,m,d] = ds.split('-');
+  const date = new Date(+y,+m-1,+d);
+  return date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2300);
+}
+
+function overlayClick(e, id){
+  if(e.target === document.getElementById(id))
+    document.getElementById(id).classList.remove('open');
+}
+
+// ─────────────────────────────────────
+//  GREETING
+// ─────────────────────────────────────
+function initGreeting(){
+  const h = new Date().getHours();
+  document.getElementById('timeGreeting').textContent = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const name = (getLS('lifetracker_v1_settings',{})).name || '';
+  document.getElementById('greetingName').textContent = name ? `Hey, ${name}.` : 'Welcome back.';
+}
+
+// ─────────────────────────────────────
+//  CALENDAR DATA
+//  Own key: lifetracker_v1_calendar → { 'YYYY-MM-DD': { types:[], note:'' } }
+//  Also reads ppl_v3 (workout auto-dots) and restaurants (nommie auto-dots)
+// ─────────────────────────────────────
+let calYear, calMo, activeDs = null;
+
+function getFitnessMap(){
+  const f = getLS('ppl_v3', {});
+  const m = {};
+  Object.entries(f).forEach(([ds,e])=>{
+    const en = (!e.types && e.type) ? {...e, types:[e.type]} : e;
+    if(en && !en.rest && en.types && en.types.length) m[ds] = true;
+  });
+  return m;
+}
+
+function getNommieMap(){
+  const r = getLS('lifetracker_v1_restaurants', {});
+  const m = {};
+  (r.restaurants||[]).forEach(x=>{ if(x.dateAdded) m[x.dateAdded.slice(0,10)] = true; });
+  return m;
+}
+
+function initCal(){
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMo   = now.getMonth();
+  renderCal();
+}
+
+function calNav(dir){
+  calMo += dir;
+  if(calMo < 0){ calMo=11; calYear--; }
+  if(calMo > 11){ calMo=0; calYear++; }
+  renderCal();
+}
+
+function renderCal(){
+  document.getElementById('calMonthLabel').textContent = MONTHS[calMo]+' '+calYear;
+
+  const calData   = getLS('lifetracker_v1_calendar', {});
+  const fitMap    = getFitnessMap();
+  const nommieMap = getNommieMap();
+  const today     = todayKey();
+
+  const firstDow  = (new Date(calYear, calMo, 1).getDay()+6)%7; // Mon=0
+  const daysInMo  = new Date(calYear, calMo+1, 0).getDate();
+  const prevDays  = new Date(calYear, calMo, 0).getDate();
+
+  let html = '';
+
+  for(let i=0; i<firstDow; i++){
+    html += `<div class="cal-cell other-month"><div class="cal-num">${prevDays-firstDow+i+1}</div><div class="cal-dots"></div></div>`;
   }
 
-  // Today strip
-  function initToday() {
-    const now = new Date();
-    document.getElementById('todayDate').textContent = now.toLocaleDateString('en-US', {
-      weekday: 'long', month: 'long', day: 'numeric'
-    });
+  for(let d=1; d<=daysInMo; d++){
+    const ds    = calYear+'-'+pad(calMo+1)+'-'+pad(d);
+    const entry = calData[ds] || {types:[], note:''};
+    const types = entry.types || [];
+    const isToday = ds===today;
 
-    // habits
-    try {
-      const habits = JSON.parse(localStorage.getItem('lifetracker_v1_habits') || '{}');
-      const habitList = habits.habits || [];
-      const todayKey = now.toISOString().slice(0, 10);
-      const completions = habits.completions || {};
-      const todayCompleted = habitList.filter(h => (completions[todayKey] || []).includes(h.id));
-      const total = habitList.filter(h => {
-        if (h.frequency === 'daily') return true;
-        const day = now.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
-        return (h.days || []).includes(day);
-      });
+    const dots = [];
+    if(types.includes('workout') || fitMap[ds]) dots.push('<div class="cal-dot dot-workout"></div>');
+    if(types.includes('chore'))                  dots.push('<div class="cal-dot dot-chore"></div>');
+    if(types.includes('nommie') || nommieMap[ds]) dots.push('<div class="cal-dot dot-nommie"></div>');
+    if(types.includes('rest') && !dots.length)   dots.push('<div class="cal-dot dot-rest"></div>');
 
-      if (total.length === 0) {
-        document.getElementById('todayNudge').textContent = 'No habits set yet. Add some in the Habits tracker.';
-      } else if (todayCompleted.length === total.length) {
-        document.getElementById('todayNudge').textContent = `All ${total.length} habits done today. 🎉`;
-      } else {
-        const left = total.length - todayCompleted.length;
-        document.getElementById('todayNudge').textContent = `${left} habit${left !== 1 ? 's' : ''} left to complete today.`;
-      }
+    html += `<div class="cal-cell${isToday?' today':''}" onclick="openCalDay('${ds}')">
+      <div class="cal-num">${d}</div>
+      <div class="cal-dots">${dots.join('')}</div>
+    </div>`;
+  }
 
-      // streak
-      const bestStreak = calcBestStreak(habitList, completions);
-      if (bestStreak > 1) {
-        const badge = document.getElementById('streakBadge');
-        badge.style.display = '';
-        badge.textContent = `🔥 ${bestStreak}d`;
-      }
-    } catch(e) {
-      document.getElementById('todayNudge').textContent = 'Start tracking your day.';
+  const total = firstDow + daysInMo;
+  const trail = (7 - total%7) % 7;
+  for(let j=1; j<=trail; j++){
+    html += `<div class="cal-cell other-month"><div class="cal-num">${j}</div><div class="cal-dots"></div></div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+// ─────────────────────────────────────
+//  CALENDAR DAY POPOUT
+// ─────────────────────────────────────
+function openCalDay(ds){
+  activeDs = ds;
+  document.getElementById('sheetDate').textContent = fmtFull(ds);
+  document.getElementById('sheetSubtitle').textContent = ds === todayKey() ? 'Log what happened today' : 'Log activity for this day';
+
+  const entry = (getLS('lifetracker_v1_calendar', {}))[ds] || {types:[], note:''};
+  const types = entry.types || [];
+
+  // Reset chips
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.className = 'chip';
+    if(types.includes(c.dataset.type)) c.classList.add('on-'+c.dataset.type);
+  });
+
+  document.getElementById('sheetNote').value = entry.note || '';
+  document.getElementById('sheetDelBtn').classList.toggle('hidden', !calHasEntry(ds));
+  document.getElementById('calOverlay').classList.add('open');
+}
+
+function calHasEntry(ds){
+  const data = getLS('lifetracker_v1_calendar', {});
+  const e = data[ds];
+  return e && (e.types.length || e.note);
+}
+
+function toggleChip(chip){
+  const t = chip.dataset.type;
+  const onClass = 'on-'+t;
+  if(chip.classList.contains(onClass)){
+    chip.classList.remove(onClass);
+  } else {
+    // rest is exclusive
+    if(t==='rest'){
+      document.querySelectorAll('.chip').forEach(c=>c.className='chip');
+    } else {
+      const restChip = document.querySelector('.chip[data-type="rest"]');
+      if(restChip) restChip.className='chip';
     }
+    chip.classList.add(onClass);
   }
+}
 
-  function calcBestStreak(habits, completions) {
-    let best = 0;
-    for (const h of habits) {
-      let streak = 0;
-      let d = new Date();
-      for (let i = 0; i < 365; i++) {
-        const key = d.toISOString().slice(0, 10);
-        if ((completions[key] || []).includes(h.id)) streak++;
-        else break;
-        d.setDate(d.getDate() - 1);
-      }
-      if (streak > best) best = streak;
+function saveCalDay(){
+  if(!activeDs) return;
+  const types = [...document.querySelectorAll('.chip')]
+    .filter(c => [...c.classList].some(cl=>cl.startsWith('on-')))
+    .map(c => c.dataset.type);
+  const note = document.getElementById('sheetNote').value.trim();
+  const data = getLS('lifetracker_v1_calendar', {});
+  if(types.length || note){
+    data[activeDs] = {types, note};
+  } else {
+    delete data[activeDs];
+  }
+  setLS('lifetracker_v1_calendar', data);
+  document.getElementById('calOverlay').classList.remove('open');
+  renderCal();
+  showToast('Saved');
+}
+
+function deleteCalDay(){
+  if(!activeDs) return;
+  const data = getLS('lifetracker_v1_calendar', {});
+  delete data[activeDs];
+  setLS('lifetracker_v1_calendar', data);
+  document.getElementById('calOverlay').classList.remove('open');
+  renderCal();
+  showToast('Deleted');
+}
+
+// ─────────────────────────────────────
+//  TRACKER CARDS
+// ─────────────────────────────────────
+const CARD_DEFS = [
+  {
+    id:'nommies', href:'nommies.html', icon:'🍽️', title:'Nommies',
+    stat(){
+      const r = getLS('lifetracker_v1_restaurants',{});
+      const list = r.restaurants||[];
+      const ranked = list.filter(x=>x.eloRanked).length;
+      if(!list.length) return 'Nothing tracked yet';
+      const want = list.filter(x=>x.status==='Want to Go').length;
+      return `${list.length} saved · ${want} on the list`;
     }
-    return best;
-  }
-
-  // Stats
-  function initStats() {
-    // Restaurants
-    try {
-      const r = JSON.parse(localStorage.getItem('lifetracker_v1_restaurants') || '{}');
-      const list = r.restaurants || [];
-      const visited = list.filter(x => x.status === 'Visited');
-      const avg = visited.length ? (visited.reduce((s, x) => s + (x.rating || 0), 0) / visited.length).toFixed(1) : null;
-      document.getElementById('stat-restaurants').textContent =
-        list.length === 0 ? 'No restaurants tracked yet' :
-        `${list.length} tracked${avg ? `, avg rating ${avg}` : ''}`;
-    } catch(e) { document.getElementById('stat-restaurants').textContent = 'No restaurants tracked yet'; }
-
-    // Media
-    try {
-      const m = JSON.parse(localStorage.getItem('lifetracker_v1_media') || '{}');
-      const movies = (m.movies || []);
-      const books = (m.books || []);
-      const year = new Date().getFullYear().toString();
-      const moviesThisYear = movies.filter(x => (x.dateAdded || '').startsWith(year)).length;
-      const booksThisYear = books.filter(x => (x.dateAdded || '').startsWith(year)).length;
-      document.getElementById('stat-media').textContent =
-        (movies.length + books.length + (m.tv || []).length) === 0 ? 'No media tracked yet' :
-        `${moviesThisYear} movie${moviesThisYear !== 1 ? 's' : ''}, ${booksThisYear} book${booksThisYear !== 1 ? 's' : ''} this year`;
-    } catch(e) { document.getElementById('stat-media').textContent = 'No media tracked yet'; }
-
-    // Fitness — reads from PPL tracker (ppl_v3)
-    try {
-      const f = JSON.parse(localStorage.getItem('ppl_v3') || '{}');
-      const _pad = n => n < 10 ? '0'+n : ''+n;
-      const _toKey = d => d.getFullYear()+'-'+_pad(d.getMonth()+1)+'-'+_pad(d.getDate());
+  },
+  {
+    id:'fitness', href:'fitness.html', icon:'💪', title:'Fitness',
+    stat(){
+      const f = getLS('ppl_v3',{});
+      const _k = d => dateKey(d);
       const now = new Date(); now.setHours(0,0,0,0);
-      const dateSet = {};
-      let totalSessions = 0;
-      Object.entries(f).forEach(([ds, e]) => {
-        const entry = (!e.types && e.type) ? {...e, types:[e.type]} : e;
-        if (entry && !entry.rest && entry.types && entry.types.length) { dateSet[ds] = true; totalSessions++; }
+      const dateSet={}; let total=0;
+      Object.entries(f).forEach(([ds,e])=>{
+        const en=(!e.types&&e.type)?{...e,types:[e.type]}:e;
+        if(en&&!en.rest&&en.types&&en.types.length){dateSet[ds]=true;total++;}
       });
-      let weekSessions = 0;
-      for (let i = 0; i <= 6; i++) { const d = new Date(now); d.setDate(now.getDate()-i); if (dateSet[_toKey(d)]) weekSessions++; }
-      let streak = 0; const sc = new Date(now);
-      while (true) { const k = _toKey(sc); if (dateSet[k]) { streak++; sc.setDate(sc.getDate()-1); } else if (k===_toKey(now)) { sc.setDate(sc.getDate()-1); } else break; }
-      document.getElementById('stat-fitness').textContent =
-        totalSessions === 0 ? 'No sessions logged yet' :
-        streak > 0 ? `${weekSessions}x this week · ${streak > 1 ? '🔥'+streak+'d streak' : totalSessions+' total sessions'}` :
-        `${weekSessions}x this week, ${totalSessions} total sessions`;
-    } catch(e) { document.getElementById('stat-fitness').textContent = 'No sessions logged yet'; }
-
-    // Travel
-    try {
-      const t = JSON.parse(localStorage.getItem('lifetracker_v1_travel') || '{}');
-      const places = t.places || [];
-      const visited = places.filter(p => p.status === 'Visited');
-      const countries = new Set(visited.map(p => p.country)).size;
-      document.getElementById('stat-travel').textContent =
-        visited.length === 0 ? 'No places tracked yet' :
-        `${visited.length} cities, ${countries} country${countries !== 1 ? 'ies' : 'y'} visited`;
-    } catch(e) { document.getElementById('stat-travel').textContent = 'No places tracked yet'; }
-
-    // Habits
-    try {
-      const habits = JSON.parse(localStorage.getItem('lifetracker_v1_habits') || '{}');
-      const habitList = habits.habits || [];
-      const todayKey = new Date().toISOString().slice(0, 10);
-      const completions = habits.completions || {};
-      const today = new Date();
-      const todayScheduled = habitList.filter(h => {
-        if (h.frequency === 'daily') return true;
-        const day = today.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
-        return (h.days || []).includes(day);
-      });
-      const done = todayScheduled.filter(h => (completions[todayKey] || []).includes(h.id)).length;
-      document.getElementById('stat-habits').textContent =
-        habitList.length === 0 ? 'No habits set up yet' :
-        `${done}/${todayScheduled.length} completed today`;
-    } catch(e) { document.getElementById('stat-habits').textContent = 'No habits set up yet'; }
-  }
-
-  // Settings
-  function openSettings() {
-    const settings = JSON.parse(localStorage.getItem('lifetracker_v1_settings') || '{}');
-    document.getElementById('nameInput').value = settings.name || '';
-    document.getElementById('settingsOverlay').classList.add('open');
-  }
-  function closeSettingsIfOutside(e) {
-    if (e.target === document.getElementById('settingsOverlay')) {
-      document.getElementById('settingsOverlay').classList.remove('open');
+      let week=0; for(let i=0;i<=6;i++){const d=new Date(now);d.setDate(now.getDate()-i);if(dateSet[_k(d)])week++;}
+      let streak=0; const sc=new Date(now);
+      while(true){const k=_k(sc);if(dateSet[k]){streak++;sc.setDate(sc.getDate()-1);}else if(k===_k(now)){sc.setDate(sc.getDate()-1);}else break;}
+      if(!total) return 'No sessions logged yet';
+      if(streak>1) return `${week}x this week · 🔥 ${streak} day streak`;
+      return `${week}x this week · ${total} total sessions`;
     }
-  }
-  function saveSettings() {
-    const name = document.getElementById('nameInput').value.trim();
-    localStorage.setItem('lifetracker_v1_settings', JSON.stringify({ name }));
-    document.getElementById('settingsOverlay').classList.remove('open');
-    initGreeting();
-  }
+  },
+  {
+    id:'chores', href:'chores.html', icon:'🧹', title:'Chores',
+    stat(){
+      const h = getLS('lifetracker_v1_chores',{});
+      const list = h.habits||h.chores||[];
+      const completions = h.completions||{};
+      const tk = todayKey();
+      const today = new Date();
+      const scheduled = list.filter(x=>{
+        if(x.frequency==='daily') return true;
+        const day = today.toLocaleDateString('en-US',{weekday:'short'}).toLowerCase();
+        return (x.days||[]).includes(day);
+      });
+      const done = scheduled.filter(x=>(completions[tk]||[]).includes(x.id)).length;
+      if(!list.length) return 'No chores set up yet';
+      return done===scheduled.length && scheduled.length
+        ? `All ${scheduled.length} done today 🎉`
+        : `${done}/${scheduled.length} done today`;
+    }
+  },
+  {
+    id:'media', href:'media.html', icon:'🎬', title:'Media',
+    stat(){
+      const m = getLS('lifetracker_v1_media',{});
+      const yr = new Date().getFullYear().toString();
+      const movies=(m.movies||[]).filter(x=>(x.dateAdded||'').startsWith(yr)).length;
+      const books=(m.books||[]).filter(x=>(x.dateAdded||'').startsWith(yr)).length;
+      const total=(m.movies||[]).length+(m.books||[]).length+(m.tv||[]).length;
+      if(!total) return 'Nothing tracked yet';
+      return `${movies} movie${movies!==1?'s':''}, ${books} book${books!==1?'s':''} this year`;
+    }
+  },
+];
 
+// ─────────────────────────────────────
+//  DRAG-TO-REORDER
+// ─────────────────────────────────────
+let order     = null; // array of card ids
+let dragSrcId = null;
+let dragOverId= null;
+
+// Touch drag state
+let touchClone  = null;
+let touchSrcId  = null;
+let touchStartY = 0;
+let touchOffsetY= 0;
+
+function getOrder(){
+  if(order) return order;
+  const saved = getLS('lifetracker_v1_card_order', null);
+  const ids   = CARD_DEFS.map(c=>c.id);
+  // validate saved order — must contain exactly the same ids
+  if(saved && saved.length===ids.length && ids.every(id=>saved.includes(id))){
+    order = saved;
+  } else {
+    order = ids;
+  }
+  return order;
+}
+
+function orderedDefs(){
+  return getOrder().map(id=>CARD_DEFS.find(c=>c.id===id));
+}
+
+function persistOrder(){
+  setLS('lifetracker_v1_card_order', order);
+}
+
+function renderCards(){
+  const list = document.getElementById('cardsList');
+  list.innerHTML = orderedDefs().map(card=>`
+    <a class="tracker-card tappable" href="${card.href}"
+       id="card-${card.id}"
+       draggable="true"
+       ondragstart="onDragStart(event,'${card.id}')"
+       ondragover="onDragOver(event,'${card.id}')"
+       ondragleave="onDragLeave('${card.id}')"
+       ondrop="onDrop(event,'${card.id}')"
+       ondragend="onDragEnd()">
+      <div class="card-icon">${card.icon}</div>
+      <div class="card-body">
+        <div class="card-title">${card.title}</div>
+        <div class="card-stat">${card.stat()}</div>
+      </div>
+      <div class="card-right">
+        <div class="drag-handle"
+             title="Drag to reorder"
+             ontouchstart="touchDragStart(event,'${card.id}')"
+             ontouchmove="touchDragMove(event)"
+             ontouchend="touchDragEnd(event)"
+             onclick="event.preventDefault()"
+        ><i data-lucide="grip-vertical" width="16" height="16"></i></div>
+        <div class="card-arrow"><i data-lucide="chevron-right" width="16" height="16"></i></div>
+      </div>
+    </a>`).join('');
+  if(window.lucide) lucide.createIcons();
+}
+
+// Mouse / pointer drag (desktop)
+function onDragStart(e, id){
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(()=>{
+    const el = document.getElementById('card-'+id);
+    if(el){ el.classList.add('dragging'); el.classList.remove('tappable'); }
+  }, 0);
+}
+function onDragOver(e, id){
+  e.preventDefault();
+  if(id===dragSrcId) return;
+  if(dragOverId!==id){
+    document.querySelectorAll('.tracker-card').forEach(c=>c.classList.remove('drag-over'));
+    dragOverId = id;
+    const el = document.getElementById('card-'+id);
+    if(el) el.classList.add('drag-over');
+  }
+}
+function onDragLeave(id){
+  const el = document.getElementById('card-'+id);
+  if(el) el.classList.remove('drag-over');
+  if(dragOverId===id) dragOverId=null;
+}
+function onDrop(e, id){
+  e.preventDefault();
+  if(dragSrcId && id!==dragSrcId) doReorder(dragSrcId, id);
+}
+function onDragEnd(){
+  document.querySelectorAll('.tracker-card').forEach(c=>{
+    c.classList.remove('dragging','drag-over');
+    c.classList.add('tappable');
+  });
+  dragSrcId=null; dragOverId=null;
+}
+
+// Touch drag (mobile — handle only)
+function touchDragStart(e, id){
+  e.preventDefault();
+  touchSrcId = id;
+  const srcEl = document.getElementById('card-'+id);
+  const rect  = srcEl.getBoundingClientRect();
+  touchStartY  = e.touches[0].clientY;
+  touchOffsetY = e.touches[0].clientY - rect.top;
+
+  // Ghost clone
+  touchClone = srcEl.cloneNode(true);
+  touchClone.style.cssText = `
+    position:fixed;left:${rect.left}px;top:${rect.top}px;
+    width:${rect.width}px;opacity:.85;pointer-events:none;z-index:500;
+    border-radius:${getComputedStyle(srcEl).borderRadius};
+    box-shadow:0 10px 30px rgba(0,0,0,.18);transform:scale(1.02);
+    transition:none;`;
+  document.body.appendChild(touchClone);
+  srcEl.style.opacity='.35';
+}
+
+function touchDragMove(e){
+  if(!touchClone||!touchSrcId) return;
+  e.preventDefault();
+  const y = e.touches[0].clientY;
+  touchClone.style.top = (y - touchOffsetY)+'px';
+
+  // Highlight target
+  document.querySelectorAll('.tracker-card').forEach(c=>c.classList.remove('drag-over'));
+  dragOverId = null;
+  document.querySelectorAll('.tracker-card').forEach(c=>{
+    if(c.id==='card-'+touchSrcId) return;
+    const r = c.getBoundingClientRect();
+    if(y>=r.top && y<=r.bottom){
+      c.classList.add('drag-over');
+      dragOverId = c.id.replace('card-','');
+    }
+  });
+}
+
+function touchDragEnd(e){
+  if(!touchClone) return;
+  if(touchClone.parentNode) touchClone.parentNode.removeChild(touchClone);
+  touchClone = null;
+  const srcEl = document.getElementById('card-'+touchSrcId);
+  if(srcEl) srcEl.style.opacity='';
+  document.querySelectorAll('.tracker-card').forEach(c=>c.classList.remove('drag-over'));
+  if(touchSrcId && dragOverId && touchSrcId!==dragOverId) doReorder(touchSrcId, dragOverId);
+  touchSrcId=null; dragOverId=null;
+}
+
+function doReorder(fromId, toId){
+  const cur = getOrder();
+  const fi = cur.indexOf(fromId), ti = cur.indexOf(toId);
+  if(fi<0||ti<0) return;
+  cur.splice(fi,1);
+  cur.splice(ti,0,fromId);
+  order = cur;
+  persistOrder();
+  renderCards();
+}
+
+// ─────────────────────────────────────
+//  SETTINGS
+// ─────────────────────────────────────
+function openSettings(){
+  document.getElementById('nameInput').value = (getLS('lifetracker_v1_settings',{})).name||'';
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function saveSettings(){
+  const name = document.getElementById('nameInput').value.trim();
+  setLS('lifetracker_v1_settings',{name});
+  document.getElementById('settingsOverlay').classList.remove('open');
   initGreeting();
-  initToday();
-  initStats();
+}
+
+// ─────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────
+initGreeting();
+initCal();
+renderCards();
 </script>
 </body>
 </html>
